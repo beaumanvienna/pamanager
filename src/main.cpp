@@ -44,7 +44,7 @@ void print_properties(pa_proplist *props)
  */
 void sinklist_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
-
+    LOG_WARN("sinklist_cb");
     // If eol is set to a positive number, you're at the end of the list
     if (eol > 0)
     {
@@ -60,7 +60,9 @@ void sinklist_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 /**
  * print information about a source
  */
-void sourcelist_cb(pa_context *c, const pa_source_info *i, int eol, void *userdata) {
+void sourcelist_cb(pa_context *c, const pa_source_info *i, int eol, void *userdata)
+{
+    LOG_WARN("sourcelist_cb");
     if (eol > 0)
     {
         printf("**No more sources\n");
@@ -75,17 +77,25 @@ void sourcelist_cb(pa_context *c, const pa_source_info *i, int eol, void *userda
 
 void context_state_cb(pa_context *c, void *userdata)
 {
-
+    LOG_WARN("context_state_cb");
     switch (pa_context_get_state(c))
     {
         case PA_CONTEXT_UNCONNECTED:
+            LOG_TRACE("context_state_cb: PA_CONTEXT_UNCONNECTED");
+            break;
         case PA_CONTEXT_CONNECTING:
+            LOG_TRACE("context_state_cb: PA_CONTEXT_CONNECTING");
+            break;
         case PA_CONTEXT_AUTHORIZING:
+            LOG_TRACE("context_state_cb: PA_CONTEXT_AUTHORIZING");
+            break;
         case PA_CONTEXT_SETTING_NAME:
+            LOG_TRACE("context_state_cb: PA_CONTEXT_SETTING_NAME");
             break;
 
         case PA_CONTEXT_READY:
         {
+            LOG_TRACE("context_state_cb: PA_CONTEXT_READY");
             pa_operation *o;
 
             // set up a callback to tell us about source devices
@@ -113,9 +123,14 @@ void context_state_cb(pa_context *c, void *userdata)
         }
 
         case PA_CONTEXT_FAILED:
+            LOG_TRACE("context_state_cb: PA_CONTEXT_FAILED");
+            break;
         case PA_CONTEXT_TERMINATED:
+            LOG_TRACE("context_state_cb: PA_CONTEXT_TERMINATED");
+            break;
         default:
-            return;
+            LOG_TRACE("context_state_cb: default");
+            break;
     }
 }
 
