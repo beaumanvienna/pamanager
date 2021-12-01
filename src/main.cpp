@@ -1,20 +1,22 @@
-/**
- * palist_devices.c 
- * Jan Newmarch
- */
+
+#include <chrono>
+#include <thread>
 
 #include <stdio.h>
 #include <string.h>
 #include <pulse/pulseaudio.h>
 
-// quit when this reaches 2
+#include "colorTTY.h"
+
+using namespace std::chrono_literals;
+
 int no_more_sources_or_sinks = 0;
 
 int ret;
 
 pa_context *context;
 
-void show_error(char *s)
+void show_error(const char *s)
 {
     fprintf(stderr, "%s\n", s);
 }
@@ -26,12 +28,12 @@ void print_properties(pa_proplist *props)
     printf("  Properties are: \n");
     while (1)
     {
-        char *key;
+        const char *key;
         if ((key = pa_proplist_iterate(props, &state)) == nullptr)
         {
             return;
         }
-        char *value = pa_proplist_gets(props, key);
+        const char *value = pa_proplist_gets(props, key);
         printf("   key: %s, value: %s\n", key, value);
     }
 }
@@ -48,10 +50,6 @@ void sinklist_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
     {
         printf("**No more sinks\n");
         no_more_sources_or_sinks++;
-        if (no_more_sources_or_sinks == 2)
-        {
-            exit(0);
-        }
         return;
     }
 
@@ -67,10 +65,6 @@ void sourcelist_cb(pa_context *c, const pa_source_info *i, int eol, void *userda
     {
         printf("**No more sources\n");
         no_more_sources_or_sinks++;
-        if (no_more_sources_or_sinks == 2)
-        {
-            exit(0);
-        }
         return;
     }
 
@@ -114,7 +108,7 @@ void context_state_cb(pa_context *c, void *userdata)
                 return;
             }
             pa_operation_unref(o);
-        
+
             break;
         }
 
@@ -125,8 +119,10 @@ void context_state_cb(pa_context *c, void *userdata)
     }
 }
 
-int main(int argc, char *argv[])
+void PulseAudioThread()
 {
+
+    LOG_INFO("pulseaudio test: list all sources and sinks");
 
     // Define our pulse audio loop and connection variables
     pa_mainloop *pa_ml;
@@ -138,14 +134,28 @@ int main(int argc, char *argv[])
     context = pa_context_new(pa_mlapi, "Device list");
 
     // This function connects to the pulse server
-    pa_context_connect(context, nullptr, 0, nullptr);
+    pa_context_connect(context, nullptr, (pa_context_flags_t)0, nullptr);
 
     // This function defines a callback so the server will tell us its state.
     pa_context_set_state_callback(context, context_state_cb, nullptr);
 
-    if (pa_mainloop_run(pa_ml, &ret) < 0)
+    while(true)
     {
-        printf("pa_mainloop_run() failed.");
-        exit(1);
+        if (pa_mainloop_iterate(pa_ml, 0, &ret) < 0)
+        {
+            printf("pa_mainloop_run() failed.");
+            exit(1);
+        }
+        std::this_thread::sleep_for(16ms);
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    std::thread pulseAudioThread(PulseAudioThread);
+    while(true)
+    {
+        LOG_INFO("main thread");
+        std::this_thread::sleep_for(800ms);
     }
 }

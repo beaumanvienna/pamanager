@@ -13,6 +13,7 @@ project "pa"
 
     defines
     {
+        "_REENTRANT"
     }
 
     files 
@@ -26,8 +27,10 @@ project "pa"
         "src",
     }
 
-    libdirs
+    links
     {
+        "pulse",
+        "pthread"
     }
 
     filter { "configurations:Debug" }
