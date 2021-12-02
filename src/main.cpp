@@ -10,18 +10,16 @@
 
 using namespace std::chrono_literals;
 
-int no_more_sources_or_sinks = 0;
-
 int ret;
 
 pa_context *context;
 
-void show_error(const char *s)
+void ShowError(const char *s)
 {
     fprintf(stderr, "%s\n", s);
 }
 
-void print_properties(pa_proplist *props)
+void PrintProperties(pa_proplist *props)
 {
     void *state = nullptr;
 
@@ -49,12 +47,11 @@ void sinklist_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
     if (eol > 0)
     {
         printf("**No more sinks\n");
-        no_more_sources_or_sinks++;
         return;
     }
 
-    printf("Sink: name %s, description %s\n", i->name, i->description);
-    print_properties(i->proplist);
+    printf("Sink: name %s, description %s, index: %d\n", i->name, i->description, i->index);
+    PrintProperties(i->proplist);
 }
 
 /**
@@ -66,14 +63,51 @@ void sourcelist_cb(pa_context *c, const pa_source_info *i, int eol, void *userda
     if (eol > 0)
     {
         printf("**No more sources\n");
-        no_more_sources_or_sinks++;
         return;
     }
 
-    printf("Source: name %s, description %s\n", i->name, i->description);
-    print_properties(i->proplist);
+    printf("Source: name %s, description %s, index: %d\n", i->name, i->description, i->index);
+    PrintProperties(i->proplist);
 }
 
+void subscribe_cb(pa_context *c, pa_subscription_event_type_t t, uint32_t index, void *userdata)
+{
+    switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK)
+    {
+        case PA_SUBSCRIPTION_EVENT_SINK:
+            if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
+            {
+                printf("Removing sink index %d\n", index);
+            }
+            else
+            {
+                pa_operation *o;
+                if (!(o = pa_context_get_sink_info_by_index(c, index, sinklist_cb, nullptr)))
+                {
+                    ShowError("pa_context_get_sink_info_by_index() failed");
+                    return;
+                }
+                pa_operation_unref(o);
+            }
+            break;
+        case PA_SUBSCRIPTION_EVENT_SOURCE:
+            if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
+            {
+                printf("Removing source index %d\n", index);
+            }
+            else
+            {
+                pa_operation *o;
+                if (!(o = pa_context_get_source_info_by_index(c, index, sourcelist_cb, nullptr)))
+                {
+                    ShowError("pa_context_get_source_info_by_index() failed");
+                    return;
+                }
+                pa_operation_unref(o);
+            }
+            break;
+    }
+}
 
 void context_state_cb(pa_context *c, void *userdata)
 {
@@ -104,7 +138,7 @@ void context_state_cb(pa_context *c, void *userdata)
                                 nullptr
                                 )))
             {
-                show_error("pa_context_subscribe() failed");
+                ShowError("pa_context_subscribe() failed");
                 return;
             }
             pa_operation_unref(o);
@@ -114,7 +148,16 @@ void context_state_cb(pa_context *c, void *userdata)
                                 sinklist_cb,
                                 nullptr
                                 ))) {
-                show_error("pa_context_subscribe() failed");
+                ShowError("pa_context_subscribe() failed");
+                return;
+            }
+            pa_operation_unref(o);
+
+            pa_context_set_subscribe_callback(c, subscribe_cb, nullptr);
+            pa_subscription_mask_t mask = (pa_subscription_mask_t) (PA_SUBSCRIPTION_MASK_SINK| PA_SUBSCRIPTION_MASK_SOURCE);
+            if (!(o = pa_context_subscribe(c, mask, nullptr, nullptr)))
+            {
+                ShowError("pa_context_subscribe() failed");
                 return;
             }
             pa_operation_unref(o);
