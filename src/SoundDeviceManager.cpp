@@ -20,34 +20,20 @@
    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#pragma once
+#include "colorTTY.h"
+#include "SoundDeviceManager.h"
 
-#include <iostream>
-namespace Color {
-    enum Code {
-        FG_RED      = 31,
-        FG_GREEN    = 32,
-        FG_YELLOW   = 33,
-        FG_BLUE     = 34,
-        FG_DEFAULT  = 39,
-        BG_RED      = 41,
-        BG_GREEN    = 42,
-        BG_BLUE     = 44,
-        BG_DEFAULT  = 49
-    };
-    class Modifier {
-        Code code;
-    public:
-        Modifier(Code pCode) : code(pCode) {}
-        friend std::ostream&
-        operator<<(std::ostream& os, const Modifier& mod) {
-            return os << "\033[" << mod.code << "m";
-        }
-    };
+SoundDeviceManager::SoundDeviceManager()
+{
+    m_DeviceList.push_back("device 1");
+    m_DeviceList.push_back("device 2");
+    m_DeviceList.push_back("device 3");
 }
 
-void LOG_INFO(const std::string& x);
-void LOG_WARN(const std::string& x);
-void LOG_CRITICAL(const std::string& x);
-void LOG_TRACE(const std::string& x);
-
+void SoundDeviceManager::PrintList() const
+{
+    for (auto device: m_DeviceList)
+    {
+        LOG_INFO(device);
+    }
+}

@@ -7,6 +7,7 @@
 #include <pulse/pulseaudio.h>
 
 #include "colorTTY.h"
+#include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;
 
@@ -21,6 +22,7 @@ void ShowError(const char *s)
 
 void PrintProperties(pa_proplist *props)
 {
+    return;
     void *state = nullptr;
 
     printf("  Properties are: \n");
@@ -37,12 +39,12 @@ void PrintProperties(pa_proplist *props)
 }
 
 
-/**
- * print information about a sink
- */
+// 
+// print information about a sink
+// 
 void sinklist_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
 {
-    LOG_WARN("sinklist_cb");
+    LOG_CRITICAL("sinklist_cb");
     // If eol is set to a positive number, you're at the end of the list
     if (eol > 0)
     {
@@ -54,9 +56,9 @@ void sinklist_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
     PrintProperties(i->proplist);
 }
 
-/**
- * print information about a source
- */
+// 
+// print information about a source
+// 
 void sourcelist_cb(pa_context *c, const pa_source_info *i, int eol, void *userdata)
 {
     LOG_WARN("sourcelist_cb");
@@ -208,12 +210,25 @@ void PulseAudioThread()
     }
 }
 
-int main(int argc, char *argv[])
+void OnEnter(SoundDeviceManager* soundDeviceManager)
 {
+    while (true)
+    {
+        getchar();
+        soundDeviceManager->PrintList();
+    }
+}
+
+int main()
+{
+    SoundDeviceManager soundDeviceManager;
+    
     std::thread pulseAudioThread(PulseAudioThread);
+    std::thread keyBoardCommands(OnEnter, &soundDeviceManager);
+
     while(true)
     {
-        LOG_INFO("main thread");
+        //LOG_INFO("main thread");
         std::this_thread::sleep_for(800ms);
     }
 }
