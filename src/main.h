@@ -20,33 +20,11 @@
    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#include <chrono>
-#include <thread>
+#pragma once
 
-#include "main.h"
-#include "SoundDeviceManager.h"
+#include <stdio.h>
 
-using namespace std::chrono_literals;
+#include "colorTTY.h"
+#include "misc.h"
 
-void OnEnter(SoundDeviceManager* soundDeviceManager)
-{
-    while (true)
-    {
-        getchar();
-        soundDeviceManager->PrintList();
-    }
-}
-
-int main()
-{
-    auto soundDeviceManager = SoundDeviceManager::GetInstance();
-    soundDeviceManager->Start();
-
-    std::thread keyBoardCommands(OnEnter, soundDeviceManager);
-
-    while(true)
-    {
-        //LOG_INFO("main thread");
-        std::this_thread::sleep_for(800ms);
-    }
-}
+typedef uint32_t uint;

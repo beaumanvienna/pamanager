@@ -23,13 +23,29 @@
 #pragma once
 
 #include <vector>
+#include <pulse/pulseaudio.h>
 
 class SoundDeviceManager
 {
 public:
-    SoundDeviceManager();
+    static SoundDeviceManager* GetInstance();
+    void Start();
     void PrintList() const;
 
 private:
+    SoundDeviceManager();
+    void PulseAudioThread();
+    
+    static void PrintProperties(pa_proplist *props, bool verbose = false);
+    static void SinklistCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
+    static void SourcelistCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata);
+    static void SubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t index, void *userdata);
+    static void ContextStateCallback(pa_context *c, void *userdata);
+
+private:
+    static SoundDeviceManager* m_Instance;
+    pa_context *m_Context;
     std::vector<std::string> m_DeviceList;
 };
+
+

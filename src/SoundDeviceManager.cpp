@@ -20,9 +20,14 @@
    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#include "colorTTY.h"
+#include <chrono>
+#include <thread>
+
+#include "main.h"
 #include "SoundDeviceManager.h"
 
+using namespace std::chrono_literals;
+SoundDeviceManager* SoundDeviceManager::m_Instance = nullptr;
 SoundDeviceManager::SoundDeviceManager()
 {
     m_DeviceList.push_back("device 1");
@@ -30,10 +35,216 @@ SoundDeviceManager::SoundDeviceManager()
     m_DeviceList.push_back("device 3");
 }
 
+SoundDeviceManager* SoundDeviceManager::GetInstance()
+{
+    if (!m_Instance)
+    {
+        m_Instance = new SoundDeviceManager();
+    }    
+    return m_Instance;
+}
+
+void SoundDeviceManager::Start()
+{
+    //std::thread pulseAudioThread([this](){ PulseAudioThread(); });
+    PulseAudioThread();
+}
+
 void SoundDeviceManager::PrintList() const
 {
     for (auto device: m_DeviceList)
     {
         LOG_INFO(device);
+    }
+}
+
+void SoundDeviceManager::PrintProperties(pa_proplist *props, bool verbose)
+{
+    if (!verbose) return;
+
+    void *state = nullptr;
+
+    printf("  Properties are: \n");
+    while (1)
+    {
+        const char *key;
+        if ((key = pa_proplist_iterate(props, &state)) == nullptr)
+        {
+            return;
+        }
+        const char *value = pa_proplist_gets(props, key);
+        printf("   key: %s, value: %s\n", key, value);
+    }
+}
+
+// 
+// print information about a sink
+// 
+void SoundDeviceManager::SinklistCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
+{
+    LOG_CRITICAL("SinklistCallback");
+    // If eol is set to a positive number, you're at the end of the list
+    if (eol > 0)
+    {
+        printf("**No more sinks\n");
+        return;
+    }
+
+    printf("Sink: name %s, description %s, index: %d\n", i->name, i->description, i->index);
+    PrintProperties(i->proplist);
+}
+
+// 
+// print information about a source
+// 
+void SoundDeviceManager::SourcelistCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata)
+{
+    LOG_WARN("SourcelistCallback");
+    if (eol > 0)
+    {
+        printf("**No more sources\n");
+        return;
+    }
+
+    printf("Source: name %s, description %s, index: %d\n", i->name, i->description, i->index);
+    PrintProperties(i->proplist);
+}
+
+void SoundDeviceManager::SubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint index, void *userdata)
+{
+    switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK)
+    {
+        case PA_SUBSCRIPTION_EVENT_SINK:
+            if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
+            {
+                printf("Removing sink index %d\n", index);
+            }
+            else
+            {
+                pa_operation *o;
+                if (!(o = pa_context_get_sink_info_by_index(c, index, SinklistCallback, nullptr)))
+                {
+                    ShowError("pa_context_get_sink_info_by_index() failed");
+                    return;
+                }
+                pa_operation_unref(o);
+            }
+            break;
+        case PA_SUBSCRIPTION_EVENT_SOURCE:
+            if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
+            {
+                printf("Removing source index %d\n", index);
+            }
+            else
+            {
+                pa_operation *o;
+                if (!(o = pa_context_get_source_info_by_index(c, index, SourcelistCallback, nullptr)))
+                {
+                    ShowError("pa_context_get_source_info_by_index() failed");
+                    return;
+                }
+                pa_operation_unref(o);
+            }
+            break;
+    }
+}
+
+void SoundDeviceManager::ContextStateCallback(pa_context *c, void *userdata)
+{
+    LOG_WARN("ContextStateCallback");
+    switch (pa_context_get_state(c))
+    {
+        case PA_CONTEXT_UNCONNECTED:
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_UNCONNECTED");
+            break;
+        case PA_CONTEXT_CONNECTING:
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_CONNECTING");
+            break;
+        case PA_CONTEXT_AUTHORIZING:
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_AUTHORIZING");
+            break;
+        case PA_CONTEXT_SETTING_NAME:
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_SETTING_NAME");
+            break;
+
+        case PA_CONTEXT_READY:
+        {
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_READY");
+            pa_operation *o;
+
+            // set up a callback to tell us about source devices
+            if (!(o = pa_context_get_source_info_list(c,
+                                SourcelistCallback,
+                                nullptr
+                                )))
+            {
+                ShowError("pa_context_subscribe() failed");
+                return;
+            }
+            pa_operation_unref(o);
+
+            // set up a callback to tell us about sink devices
+            if (!(o = pa_context_get_sink_info_list(c,
+                                SinklistCallback,
+                                nullptr
+                                ))) {
+                ShowError("pa_context_subscribe() failed");
+                return;
+            }
+            pa_operation_unref(o);
+
+            pa_context_set_subscribe_callback(c, SubscribeCallback, nullptr);
+            pa_subscription_mask_t mask = (pa_subscription_mask_t) (PA_SUBSCRIPTION_MASK_SINK| PA_SUBSCRIPTION_MASK_SOURCE);
+            if (!(o = pa_context_subscribe(c, mask, nullptr, nullptr)))
+            {
+                ShowError("pa_context_subscribe() failed");
+                return;
+            }
+            pa_operation_unref(o);
+
+            break;
+        }
+
+        case PA_CONTEXT_FAILED:
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_FAILED");
+            break;
+        case PA_CONTEXT_TERMINATED:
+            LOG_TRACE("ContextStateCallback: PA_CONTEXT_TERMINATED");
+            break;
+        default:
+            LOG_TRACE("ContextStateCallback: default");
+            break;
+    }
+}
+
+void SoundDeviceManager::PulseAudioThread()
+{
+
+    LOG_INFO("pulseaudio test: list all sources and sinks");
+
+    // Define our pulse audio loop and connection variables
+    pa_mainloop *pa_ml;
+    pa_mainloop_api *pa_mlapi;
+
+    // Create a mainloop API and connection to the default server
+    pa_ml = pa_mainloop_new();
+    pa_mlapi = pa_mainloop_get_api(pa_ml);
+    m_Context = pa_context_new(pa_mlapi, "Device list");
+
+    // This function connects to the pulse server
+    pa_context_connect(m_Context, nullptr, (pa_context_flags_t)0, nullptr);
+
+    // This function defines a callback so the server will tell us its state.
+    pa_context_set_state_callback(m_Context, ContextStateCallback, nullptr);
+
+    while(true)
+    {
+        int ret;
+        if (pa_mainloop_iterate(pa_ml, 0, &ret) < 0)
+        {
+            printf("pa_mainloop_run() failed.");
+            exit(1);
+        }
+        std::this_thread::sleep_for(16ms);
     }
 }
