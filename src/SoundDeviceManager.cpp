@@ -27,7 +27,9 @@
 #include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;
+
 SoundDeviceManager* SoundDeviceManager::m_Instance = nullptr;
+
 SoundDeviceManager::SoundDeviceManager()
 {
     m_DeviceList.push_back("device 1");
@@ -35,6 +37,9 @@ SoundDeviceManager::SoundDeviceManager()
     m_DeviceList.push_back("device 3");
 }
 
+// 
+// create/provide singleton
+// 
 SoundDeviceManager* SoundDeviceManager::GetInstance()
 {
     if (!m_Instance)
@@ -46,8 +51,8 @@ SoundDeviceManager* SoundDeviceManager::GetInstance()
 
 void SoundDeviceManager::Start()
 {
-    //std::thread pulseAudioThread([this](){ PulseAudioThread(); });
-    PulseAudioThread();
+    std::thread pulseAudioThread([this](){ PulseAudioThread(); });
+    pulseAudioThread.detach();
 }
 
 void SoundDeviceManager::PrintList() const
