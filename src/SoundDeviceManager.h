@@ -30,12 +30,19 @@ class SoundDeviceManager
 public:
     static SoundDeviceManager* GetInstance();
     void Start();
-    void PrintList() const;
+    void PrintInputDeviceList() const;
+    void PrintOutputDeviceList() const;
+    std::vector<std::string>& GetInputDeviceList();
+    std::vector<std::string>& GetOutputDeviceList();
 
 private:
     SoundDeviceManager();
     void PulseAudioThread();
     
+    static void RemoveInputDevice(uint index);
+    static void RemoveOutputDevice(uint index);
+    static void AddInputDevice(uint index, const char* description);
+    static void AddOutputDevice(uint index, const char* description);
     static void PrintProperties(pa_proplist *props, bool verbose = false);
     static void SinklistCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
     static void SourcelistCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata);
@@ -45,7 +52,12 @@ private:
 private:
     static SoundDeviceManager* m_Instance;
     pa_context *m_Context;
-    std::vector<std::string> m_DeviceList;
+
+    static std::vector<std::string> m_InputDeviceList;
+    static std::vector<int> m_InputDeviceIndicies;
+    static std::vector<std::string> m_OutputDeviceList;
+    static std::vector<int> m_OutputDeviceIndicies;
+
 };
 
 

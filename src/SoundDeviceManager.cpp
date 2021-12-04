@@ -29,13 +29,13 @@
 using namespace std::chrono_literals;
 
 SoundDeviceManager* SoundDeviceManager::m_Instance = nullptr;
+std::vector<std::string> SoundDeviceManager::m_InputDeviceList;
+std::vector<int> SoundDeviceManager::m_InputDeviceIndicies;
+std::vector<std::string> SoundDeviceManager::m_OutputDeviceList;
+std::vector<int> SoundDeviceManager::m_OutputDeviceIndicies;
 
 SoundDeviceManager::SoundDeviceManager()
-{
-    m_DeviceList.push_back("device 1");
-    m_DeviceList.push_back("device 2");
-    m_DeviceList.push_back("device 3");
-}
+{}
 
 // 
 // create/provide singleton
@@ -55,9 +55,19 @@ void SoundDeviceManager::Start()
     pulseAudioThread.detach();
 }
 
-void SoundDeviceManager::PrintList() const
+void SoundDeviceManager::PrintInputDeviceList() const
 {
-    for (auto device: m_DeviceList)
+    LOG_TRACE("SoundDeviceManager::PrintInputDeviceList:");
+    for (auto device: m_InputDeviceList)
+    {
+        LOG_INFO(device);
+    }
+}
+
+void SoundDeviceManager::PrintOutputDeviceList() const
+{
+    LOG_TRACE("SoundDeviceManager::PrintOutputDeviceList:");
+    for (auto device: m_OutputDeviceList)
     {
         LOG_INFO(device);
     }
@@ -94,8 +104,8 @@ void SoundDeviceManager::SinklistCallback(pa_context *c, const pa_sink_info *i, 
         printf("**No more sinks\n");
         return;
     }
-
-    printf("Sink: name %s, description %s, index: %d\n", i->name, i->description, i->index);
+    AddOutputDevice(i->index, i->description);
+    printf("Sink: name %s, description -->%s<--, index: %d\n", i->name, i->description, i->index);
     PrintProperties(i->proplist);
 }
 
@@ -110,8 +120,8 @@ void SoundDeviceManager::SourcelistCallback(pa_context *c, const pa_source_info 
         printf("**No more sources\n");
         return;
     }
-
-    printf("Source: name %s, description %s, index: %d\n", i->name, i->description, i->index);
+    AddInputDevice(i->index, i->description);
+    printf("Source: name %s, description -->%s<--, index: %d\n", i->name, i->description, i->index);
     PrintProperties(i->proplist);
 }
 
@@ -122,6 +132,7 @@ void SoundDeviceManager::SubscribeCallback(pa_context *c, pa_subscription_event_
         case PA_SUBSCRIPTION_EVENT_SINK:
             if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
             {
+                RemoveOutputDevice(index);
                 printf("Removing sink index %d\n", index);
             }
             else
@@ -138,6 +149,7 @@ void SoundDeviceManager::SubscribeCallback(pa_context *c, pa_subscription_event_
         case PA_SUBSCRIPTION_EVENT_SOURCE:
             if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
             {
+                RemoveInputDevice(index);
                 printf("Removing source index %d\n", index);
             }
             else
@@ -220,6 +232,74 @@ void SoundDeviceManager::ContextStateCallback(pa_context *c, void *userdata)
             LOG_TRACE("ContextStateCallback: default");
             break;
     }
+}
+
+void SoundDeviceManager::AddInputDevice(uint index, const char* description)
+{
+    for (auto deviceIndex : m_InputDeviceIndicies)
+    {
+        if (deviceIndex == index)
+        {
+            // already in list
+            return;
+        }
+    }
+    m_InputDeviceList.push_back(description);
+    m_InputDeviceIndicies.push_back(index);
+}
+
+void SoundDeviceManager::RemoveInputDevice(uint index)
+{
+    uint iterator = 0;
+    for (auto deviceIndex : m_InputDeviceIndicies)
+    {
+        if (deviceIndex == index)
+        {
+            m_InputDeviceList.erase(m_InputDeviceList.begin() + iterator);
+            m_InputDeviceIndicies.erase(m_InputDeviceIndicies.begin() + iterator);
+            return;
+        }
+        iterator++;
+    }
+}
+
+void SoundDeviceManager::AddOutputDevice(uint index, const char* description)
+{
+    for (auto deviceIndex : m_OutputDeviceIndicies)
+    {
+        if (deviceIndex == index)
+        {
+            // already in list
+            return;
+        }
+    }
+    m_OutputDeviceList.push_back(description);
+    m_OutputDeviceIndicies.push_back(index);
+}
+
+void SoundDeviceManager::RemoveOutputDevice(uint index)
+{
+    uint iterator = 0;
+    for (auto deviceIndex : m_OutputDeviceIndicies)
+    {
+        if (deviceIndex == index)
+        {
+            m_OutputDeviceList.erase(m_OutputDeviceList.begin() + iterator);
+            m_OutputDeviceIndicies.erase(m_OutputDeviceIndicies.begin() + iterator);
+            return;
+        }
+        iterator++;
+    }
+}
+
+std::vector<std::string>& SoundDeviceManager::GetInputDeviceList()
+{
+    return m_InputDeviceList;
+}
+
+std::vector<std::string>& SoundDeviceManager::GetOutputDeviceList()
+{
+    return m_OutputDeviceList;
 }
 
 void SoundDeviceManager::PulseAudioThread()

@@ -33,7 +33,8 @@ void OnEnter(SoundDeviceManager* soundDeviceManager)
     while (true)
     {
         getchar();
-        soundDeviceManager->PrintList();
+        soundDeviceManager->PrintInputDeviceList();
+        soundDeviceManager->PrintOutputDeviceList();
     }
 }
 
