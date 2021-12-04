@@ -32,13 +32,14 @@ public:
     void Start();
     void PrintInputDeviceList() const;
     void PrintOutputDeviceList() const;
+    void SetOutputDevice(const std::string& name);
     std::vector<std::string>& GetInputDeviceList();
     std::vector<std::string>& GetOutputDeviceList();
 
 private:
     SoundDeviceManager();
     void PulseAudioThread();
-    
+
     static void RemoveInputDevice(uint index);
     static void RemoveOutputDevice(uint index);
     static void AddInputDevice(uint index, const char* description);
@@ -46,7 +47,9 @@ private:
     static void PrintProperties(pa_proplist *props, bool verbose = false);
     static void SinklistCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
     static void SourcelistCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata);
-    static void SubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint32_t index, void *userdata);
+    static void SubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint index, void *userdata);
+    static void ContextSuccessCallback(pa_context *c, int success, void *userdata);
+
     static void ContextStateCallback(pa_context *c, void *userdata);
 
 private:
@@ -59,5 +62,3 @@ private:
     static std::vector<int> m_OutputDeviceIndicies;
 
 };
-
-

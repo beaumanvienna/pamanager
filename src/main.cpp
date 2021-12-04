@@ -27,27 +27,40 @@
 #include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;
-
-void OnEnter(SoundDeviceManager* soundDeviceManager)
-{
-    while (true)
-    {
-        getchar();
-        soundDeviceManager->PrintInputDeviceList();
-        soundDeviceManager->PrintOutputDeviceList();
-    }
-}
+void OnEnter(SoundDeviceManager* soundDeviceManager);
 
 int main()
 {
     auto soundDeviceManager = SoundDeviceManager::GetInstance();
     soundDeviceManager->Start();
 
-    std::thread keyBoardCommands(OnEnter, soundDeviceManager);
+    std::thread onEnter(OnEnter, soundDeviceManager);
 
     while(true)
     {
-        //LOG_INFO("main thread");
+        LOG_INFO("main thread");
         std::this_thread::sleep_for(800ms);
+    }
+}
+
+//
+// test code to cycle through sound output devices
+//
+void OnEnter(SoundDeviceManager* soundDeviceManager)
+{
+    uint listEntry = 0;
+    while (true)
+    {
+        getchar();
+        soundDeviceManager->PrintInputDeviceList();
+        soundDeviceManager->PrintOutputDeviceList();
+
+        auto list = soundDeviceManager->GetOutputDeviceList();
+        soundDeviceManager->SetOutputDevice(list[listEntry]);
+        listEntry++;
+        if (listEntry == list.size())
+        {
+            listEntry = 0;
+        }
     }
 }

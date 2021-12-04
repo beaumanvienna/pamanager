@@ -23,8 +23,12 @@
 #pragma once
 
 #include <iostream>
-namespace Color {
-    enum Code {
+
+namespace Color
+{
+
+    enum Code
+    {
         FG_RED      = 31,
         FG_GREEN    = 32,
         FG_YELLOW   = 33,
@@ -35,12 +39,17 @@ namespace Color {
         BG_BLUE     = 44,
         BG_DEFAULT  = 49
     };
-    class Modifier {
+
+    class Modifier
+    {
+    private:
         Code code;
+
     public:
         Modifier(Code pCode) : code(pCode) {}
-        friend std::ostream&
-        operator<<(std::ostream& os, const Modifier& mod) {
+
+        friend std::ostream& operator<<(std::ostream& os, const Modifier& mod)
+        {
             return os << "\033[" << mod.code << "m";
         }
     };
@@ -50,4 +59,3 @@ void LOG_INFO(const std::string& x);
 void LOG_WARN(const std::string& x);
 void LOG_CRITICAL(const std::string& x);
 void LOG_TRACE(const std::string& x);
-

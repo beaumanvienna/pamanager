@@ -45,7 +45,7 @@ SoundDeviceManager* SoundDeviceManager::GetInstance()
     if (!m_Instance)
     {
         m_Instance = new SoundDeviceManager();
-    }    
+    }
     return m_Instance;
 }
 
@@ -137,13 +137,13 @@ void SoundDeviceManager::SubscribeCallback(pa_context *c, pa_subscription_event_
             }
             else
             {
-                pa_operation *o;
-                if (!(o = pa_context_get_sink_info_by_index(c, index, SinklistCallback, nullptr)))
+                pa_operation *operation;
+                if (!(operation = pa_context_get_sink_info_by_index(c, index, SinklistCallback, nullptr)))
                 {
                     ShowError("pa_context_get_sink_info_by_index() failed");
                     return;
                 }
-                pa_operation_unref(o);
+                pa_operation_unref(operation);
             }
             break;
         case PA_SUBSCRIPTION_EVENT_SOURCE:
@@ -154,13 +154,13 @@ void SoundDeviceManager::SubscribeCallback(pa_context *c, pa_subscription_event_
             }
             else
             {
-                pa_operation *o;
-                if (!(o = pa_context_get_source_info_by_index(c, index, SourcelistCallback, nullptr)))
+                pa_operation *operation;
+                if (!(operation = pa_context_get_source_info_by_index(c, index, SourcelistCallback, nullptr)))
                 {
                     ShowError("pa_context_get_source_info_by_index() failed");
                     return;
                 }
-                pa_operation_unref(o);
+                pa_operation_unref(operation);
             }
             break;
     }
@@ -187,10 +187,10 @@ void SoundDeviceManager::ContextStateCallback(pa_context *c, void *userdata)
         case PA_CONTEXT_READY:
         {
             LOG_TRACE("ContextStateCallback: PA_CONTEXT_READY");
-            pa_operation *o;
+            pa_operation *operation;
 
             // set up a callback to tell us about source devices
-            if (!(o = pa_context_get_source_info_list(c,
+            if (!(operation = pa_context_get_source_info_list(c,
                                 SourcelistCallback,
                                 nullptr
                                 )))
@@ -198,26 +198,26 @@ void SoundDeviceManager::ContextStateCallback(pa_context *c, void *userdata)
                 ShowError("pa_context_subscribe() failed");
                 return;
             }
-            pa_operation_unref(o);
+            pa_operation_unref(operation);
 
             // set up a callback to tell us about sink devices
-            if (!(o = pa_context_get_sink_info_list(c,
+            if (!(operation = pa_context_get_sink_info_list(c,
                                 SinklistCallback,
                                 nullptr
                                 ))) {
                 ShowError("pa_context_subscribe() failed");
                 return;
             }
-            pa_operation_unref(o);
+            pa_operation_unref(operation);
 
             pa_context_set_subscribe_callback(c, SubscribeCallback, nullptr);
             pa_subscription_mask_t mask = (pa_subscription_mask_t) (PA_SUBSCRIPTION_MASK_SINK| PA_SUBSCRIPTION_MASK_SOURCE);
-            if (!(o = pa_context_subscribe(c, mask, nullptr, nullptr)))
+            if (!(operation = pa_context_subscribe(c, mask, nullptr, nullptr)))
             {
                 ShowError("pa_context_subscribe() failed");
                 return;
             }
-            pa_operation_unref(o);
+            pa_operation_unref(operation);
 
             break;
         }
@@ -300,6 +300,38 @@ std::vector<std::string>& SoundDeviceManager::GetInputDeviceList()
 std::vector<std::string>& SoundDeviceManager::GetOutputDeviceList()
 {
     return m_OutputDeviceList;
+}
+
+void SoundDeviceManager::SetOutputDevice(const std::string& name)
+{
+    uint iterator = 0;
+    for (auto device : m_OutputDeviceList)
+    {
+        if (device == name)
+        {
+            std::string index = std::to_string(m_OutputDeviceIndicies[iterator]);
+            std::cout << Color::Modifier(Color::FG_BLUE) 
+                      << "SoundDeviceManager::SetOutputDevice: " 
+                      << name << ", index: "
+                      << index
+                      << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+            pa_operation *operation;
+            operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
+            pa_operation_unref(operation);
+            return;
+        }
+        iterator++;
+    }
+    LOG_WARN("SoundDeviceManager::SetOutputDevice: sink not found");
+}
+
+void SoundDeviceManager::ContextSuccessCallback(pa_context *c, int success, void *userdata)
+{
+    std::cout << Color::Modifier(Color::FG_GREEN) 
+              << "SoundDeviceManager::ContextSuccessCallback: "
+              << (success ? "success" : "failed")
+              << Color::Modifier(Color::FG_DEFAULT)
+              << std::endl;
 }
 
 void SoundDeviceManager::PulseAudioThread()
