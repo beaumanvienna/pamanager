@@ -1,0 +1,34 @@
+name: 🐧Linux
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: update
+      run: sudo add-apt-repository universe && sudo apt-get update
+    - name: update-premake
+      run: sudo add-apt-repository ppa:beauman/marley && sudo apt-get update
+
+    - name: getdeps
+      run: sudo apt install premake5 git build-essential libpulse-dev
+
+    - name: premake
+      run: premake5 gmake2
+
+    - name: compile (release)
+      run: export MAKEFLAGS=-j8 && make verbose=1 config=release
+
+    - name: upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+            name: pa
+            path: bin/Release
