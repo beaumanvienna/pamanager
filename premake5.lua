@@ -32,7 +32,7 @@ project "testApplication"
     }
 
     filter { "configurations:Debug" }
-        defines { "DEBUG" }
+        defines { "DEBUG", "VERBOSE" }
         symbols "On"
 
     filter { "configurations:Release" }

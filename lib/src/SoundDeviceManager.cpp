@@ -23,7 +23,7 @@
 #include <chrono>
 #include <thread>
 
-#include "lib.h"
+#include "libpamanager.h"
 #include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;
@@ -88,7 +88,7 @@ void SoundDeviceManager::PrintProperties(pa_proplist* props, bool verbose)
 
     void* state = nullptr;
 
-    printf("  Properties are: \n");
+    LOG_MESSAGE("  Properties are: \n");
     while (1)
     {
         const char* key;
@@ -97,7 +97,7 @@ void SoundDeviceManager::PrintProperties(pa_proplist* props, bool verbose)
             return;
         }
         const char* value = pa_proplist_gets(props, key);
-        printf("   key: %s, value: %s\n", key, value);
+        LOG_MESSAGE("   key: %s, value: %s\n", key, value);
     }
 }
 
@@ -110,12 +110,12 @@ void SoundDeviceManager::SinklistCallback(pa_context* context, const pa_sink_inf
     // If eol is set to a positive number, you're at the end of the list
     if (eol > 0)
     {
-        printf("**No more sinks\n");
+        LOG_MESSAGE("**No more sinks\n");
         SetDefaultDevices();
         return;
     }
     AddOutputDevice(info->index, info->description, info->name);
-    printf("Sink: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
+    LOG_MESSAGE("Sink: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
     PrintProperties(info->proplist);
 }
 
@@ -127,12 +127,12 @@ void SoundDeviceManager::SourcelistCallback(pa_context* context, const pa_source
     LOG_WARN("SourcelistCallback");
     if (eol > 0)
     {
-        printf("**No more sources\n");
+        LOG_MESSAGE("**No more sources\n");
         SetDefaultDevices();
         return;
     }
     AddInputDevice(info->index, info->description, info->name);
-    printf("Source: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
+    LOG_MESSAGE("Source: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
     PrintProperties(info->proplist);
 }
 
@@ -144,7 +144,7 @@ void SoundDeviceManager::SubscribeCallback(pa_context* context, pa_subscription_
             if ((eventType & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
             {
                 RemoveOutputDevice(index);
-                printf("Removing sink index %d\n", index);
+                LOG_MESSAGE("Removing sink index %d\n", index);
             }
             else
             {
@@ -161,7 +161,7 @@ void SoundDeviceManager::SubscribeCallback(pa_context* context, pa_subscription_
             if ((eventType & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
             {
                 RemoveInputDevice(index);
-                printf("Removing source index %d\n", index);
+                LOG_MESSAGE("Removing source index %d\n", index);
             }
             else
             {
@@ -249,11 +249,9 @@ void SoundDeviceManager::ContextStateCallback(pa_context* context, void* userdat
 
 void SoundDeviceManager::ContextSuccessCallback(pa_context* context, int success, void* userdata)
 {
-    std::cout << Color::Modifier(Color::FG_GREEN) 
-              << "SoundDeviceManager::ContextSuccessCallback: "
-              << (success ? "success" : "failed")
-              << Color::Modifier(Color::FG_DEFAULT)
-              << std::endl;
+    std::string message = "SoundDeviceManager::ContextSuccessCallback: ";
+    message += (success ? "success" : "failed");
+    LOG_INFO(message);
 }
 
 void SoundDeviceManager::ServerInfoCallback(pa_context* context, const pa_server_info* info, void* userdata)
@@ -278,16 +276,10 @@ void SoundDeviceManager::ServerInfoCallback(pa_context* context, const pa_server
         }
         iterator++;
     }
-    
-    std::cout << Color::Modifier(Color::FG_BLUE)
-              << "default input:" << m_InputDeviceDescriptions[m_ServerInfo.m_DefaultInputDeviceIndex]
-              << Color::Modifier(Color::FG_DEFAULT)
-              << std::endl;
 
-    std::cout << Color::Modifier(Color::FG_BLUE)
-              << "default output:" << m_OutputDeviceDescriptions[m_ServerInfo.m_DefaultOutputDeviceIndex]
-              << Color::Modifier(Color::FG_DEFAULT)
-              << std::endl;
+    LOG_TRACE(std::string("default input:  ") + m_InputDeviceDescriptions[m_ServerInfo.m_DefaultInputDeviceIndex]);
+    LOG_TRACE(std::string("default output: "  + m_OutputDeviceDescriptions[m_ServerInfo.m_DefaultOutputDeviceIndex]));
+
 }
 
 void SoundDeviceManager::AddInputDevice(uint index, const char* description, const char* name)
@@ -374,14 +366,14 @@ void SoundDeviceManager::SetOutputDevice(const std::string& name)
         if (device == name)
         {
             std::string index = std::to_string(m_OutputDeviceIndicies[iterator]);
-            std::cout << Color::Modifier(Color::FG_BLUE) 
-                      << "SoundDeviceManager::SetOutputDevice: " 
-                      << name << ", index: "
-                      << index
-                      << Color::Modifier(Color::FG_DEFAULT) << std::endl;
             pa_operation* operation;
             operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
             pa_operation_unref(operation);
+
+            std::string message = "SoundDeviceManager::SetOutputDevice: ";
+            message += name + ", index: " + index;
+            LOG_TRACE(message);
+
             return;
         }
         iterator++;
@@ -394,7 +386,7 @@ void SoundDeviceManager::Mainloop()
     int ret;
     if (pa_mainloop_iterate(m_Mainloop, 0, &ret) < 0)
     {
-        printf("pa_mainloop_run() failed.");
+        ShowError("pa_mainloop_run() failed.");
         exit(1);
     }
     std::this_thread::sleep_for(16ms);

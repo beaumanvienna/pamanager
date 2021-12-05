@@ -7,7 +7,8 @@ project "libpamanager"
 
     defines
     {
-        "_REENTRANT"
+        "_REENTRANT",
+        "LIBPAMANAGER_VERSION=\"0.1.0\"",
     }
 
     files 
@@ -22,7 +23,7 @@ project "libpamanager"
     }
 
     filter { "configurations:Debug" }
-        defines { "DEBUG" }
+        defines { "DEBUG", "VERBOSE" }
         symbols "On"
 
     filter { "configurations:Release" }

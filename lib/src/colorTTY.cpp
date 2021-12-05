@@ -22,20 +22,22 @@
 
 #include "colorTTY.h"
 
-void LOG_INFO(const std::string& x)
-{
-    std::cout << Color::Modifier(Color::FG_GREEN) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
-}
-void LOG_WARN(const std::string& x)
-{
-    std::cout << Color::Modifier(Color::FG_RED) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
-}
-void LOG_CRITICAL(const std::string& x)
-{
-    std::cout << Color::Modifier(Color::FG_YELLOW) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
-}
-void LOG_TRACE(const std::string& x)
-{
-    std::cout << Color::Modifier(Color::FG_BLUE) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
-}
+#ifdef VERBOSE
+    void LOG_INFO(const std::string& x)
+    {
+        std::cout << Color::Modifier(Color::FG_GREEN) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+    void LOG_WARN(const std::string& x)
+    {
+        std::cout << Color::Modifier(Color::FG_RED) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+    void LOG_CRITICAL(const std::string& x)
+    {
+        std::cout << Color::Modifier(Color::FG_YELLOW) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+    void LOG_TRACE(const std::string& x)
+    {
+        std::cout << Color::Modifier(Color::FG_BLUE) << x << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+#endif
 

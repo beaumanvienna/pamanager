@@ -20,11 +20,34 @@
    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#pragma once
 
-#include <stdio.h>
+#include <iostream>
 
 #include "colorTTY.h"
-#include "misc.h"
 
-typedef uint32_t uint;
+namespace LibPAmanager
+{
+    void PrintVersion()
+    {
+        std::cout << Color::Modifier(Color::FG_GREEN) 
+                  << "version: "
+                  << LIBPAMANAGER_VERSION
+                  << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+
+    void PrintInfo()
+    {
+        std::string message;
+        #ifdef VERBOSE
+            message = "libpamanager was compiled with verbose output";
+        #else
+            message = "libpamanager release configuration";
+        #endif
+        #ifdef DEBUG
+            message += "\ndebug symbols: enabled";
+        #endif
+        std::cout << Color::Modifier(Color::FG_GREEN) 
+                  << message
+                  << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+}

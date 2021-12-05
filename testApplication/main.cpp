@@ -24,11 +24,16 @@
 #include <thread>
 
 #include "main.h"
+#include "libpamanager.h"
 #include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;
+
 void OnEnter(SoundDeviceManager* soundDeviceManager);
 
+//
+// test application with a main thread
+//
 int main()
 {
     auto soundDeviceManager = SoundDeviceManager::GetInstance();
@@ -36,11 +41,16 @@ int main()
 
     std::thread onEnter(OnEnter, soundDeviceManager);
     
-    LOG_INFO("pulseaudio device manager test");
+    std::cout << Color::Modifier(Color::FG_GREEN); 
+    std::cout << "*** pulseaudio device manager test ***" << std::endl;
+    std::cout << "press enter to cycle through sound output devices" << std::endl;
+
+    LibPAmanager::PrintInfo();
+    LibPAmanager::PrintVersion();
 
     while(true)
     {
-        LOG_CRITICAL("main thread");
+        std::cout << "main thread" << std::endl;
         std::this_thread::sleep_for(800ms);
     }
 }

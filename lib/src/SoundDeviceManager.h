@@ -66,10 +66,12 @@ private:
     static pa_mainloop*     m_Mainloop;
     static pa_mainloop_api* m_MainloopAPI;
 
+    // input devices
     static std::vector<std::string> m_InputDeviceDescriptions;
     static std::vector<int> m_InputDeviceIndicies;
     static std::vector<uint> m_InputDeviceChannels;
     static std::vector<std::string> m_InputDeviceNames;
+    // output devices
     static std::vector<std::string> m_OutputDeviceDescriptions;
     static std::vector<int> m_OutputDeviceIndicies;
     static std::vector<uint> m_OutputDeviceChannels;
