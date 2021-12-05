@@ -108,7 +108,7 @@ void SoundDeviceManager::SinklistCallback(pa_context* context, const pa_sink_inf
 {
     LOG_CRITICAL("SinklistCallback");
     // If eol is set to a positive number, you're at the end of the list
-    if (eol > 0)
+    if ((eol > 0) || (!info))
     {
         LOG_MESSAGE("**No more sinks\n");
         SetDefaultDevices();
@@ -125,7 +125,7 @@ void SoundDeviceManager::SinklistCallback(pa_context* context, const pa_sink_inf
 void SoundDeviceManager::SourcelistCallback(pa_context* context, const pa_source_info* info, int eol, void* userdata)
 {
     LOG_WARN("SourcelistCallback");
-    if (eol > 0)
+    if ((eol > 0) || (!info))
     {
         LOG_MESSAGE("**No more sources\n");
         SetDefaultDevices();
