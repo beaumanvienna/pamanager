@@ -2,7 +2,7 @@
 a pulse audio device manager
 
 Some parts of the project are modeled after [the pulseaudio C tutorial of Jan Newmarch](https://jan.newmarch.name/LinuxSound/Sampled/PulseAudio/#heading_toc_j_17), 
-however, it is written in C++. 
+however, this project is written in C++. 
 
 The device manager
  * provides a list of sound devices found at startup or added/removed at runtime
