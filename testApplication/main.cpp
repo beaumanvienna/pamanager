@@ -50,7 +50,7 @@ int main()
 
     while(true)
     {
-        std::cout << "main thread" << std::endl;
+        LOG_MESSAGE("main thread\n");
         std::this_thread::sleep_for(800ms);
     }
 }
