@@ -30,8 +30,11 @@ class SoundDeviceManager
 public:
     static SoundDeviceManager* GetInstance();
     void Start();
+    uint GetVolume() const;
+    void SetVolume(uint volume);
     void PrintInputDeviceList() const;
     void PrintOutputDeviceList() const;
+    std::string& GetDefaultOutputDevice() const;
     void SetOutputDevice(const std::string& name);
     std::vector<std::string>& GetInputDeviceList();
     std::vector<std::string>& GetOutputDeviceList();
@@ -40,25 +43,44 @@ private:
     SoundDeviceManager();
     void PulseAudioThread();
 
+    static void Mainloop();
+    static void SetDefaultDevices();
     static void RemoveInputDevice(uint index);
     static void RemoveOutputDevice(uint index);
-    static void AddInputDevice(uint index, const char* description);
-    static void AddOutputDevice(uint index, const char* description);
-    static void PrintProperties(pa_proplist *props, bool verbose = false);
-    static void SinklistCallback(pa_context *c, const pa_sink_info *i, int eol, void *userdata);
-    static void SourcelistCallback(pa_context *c, const pa_source_info *i, int eol, void *userdata);
-    static void SubscribeCallback(pa_context *c, pa_subscription_event_type_t t, uint index, void *userdata);
-    static void ContextSuccessCallback(pa_context *c, int success, void *userdata);
+    static void PrintProperties(pa_proplist* props, bool verbose = false);
+    static void AddInputDevice(uint index, const char* description, const char* name);
+    static void AddOutputDevice(uint index, const char* description, const char* name);
 
-    static void ContextStateCallback(pa_context *c, void *userdata);
+    // callback functions
+    static void ServerInfoCallback(pa_context* context, const pa_server_info* info, void* userdata);
+    static void SinklistCallback(pa_context* context, const pa_sink_info* info, int eol, void* userdata);
+    static void SourcelistCallback(pa_context* context, const pa_source_info* info, int eol, void* userdata);
+    static void SubscribeCallback(pa_context* context, pa_subscription_event_type_t eventType, uint index, void* userdata);
+    static void ContextSuccessCallback(pa_context* context, int success, void* userdata);
+    static void ContextStateCallback(pa_context* context, void* userdata);
 
 private:
     static SoundDeviceManager* m_Instance;
-    pa_context *m_Context;
+    static pa_context* m_Context;
 
-    static std::vector<std::string> m_InputDeviceList;
+    static pa_mainloop*     m_Mainloop;
+    static pa_mainloop_api* m_MainloopAPI;
+
+    static std::vector<std::string> m_InputDeviceDescriptions;
     static std::vector<int> m_InputDeviceIndicies;
-    static std::vector<std::string> m_OutputDeviceList;
+    static std::vector<uint> m_InputDeviceChannels;
+    static std::vector<std::string> m_InputDeviceNames;
+    static std::vector<std::string> m_OutputDeviceDescriptions;
     static std::vector<int> m_OutputDeviceIndicies;
+    static std::vector<uint> m_OutputDeviceChannels;
+    static std::vector<std::string> m_OutputDeviceNames;
+
+private:
+    struct ServerInfo
+    {
+        uint m_DefaultInputDeviceIndex;
+        uint m_DefaultOutputDeviceIndex;
+    };
+    static ServerInfo m_ServerInfo;
 
 };
