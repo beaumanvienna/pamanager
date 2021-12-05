@@ -35,6 +35,8 @@ int main()
     soundDeviceManager->Start();
 
     std::thread onEnter(OnEnter, soundDeviceManager);
+    
+    LOG_INFO("pulseaudio device manager test");
 
     while(true)
     {

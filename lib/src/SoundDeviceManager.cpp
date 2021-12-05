@@ -440,9 +440,6 @@ void SoundDeviceManager::SetVolume(uint volume)
 
 void SoundDeviceManager::PulseAudioThread()
 {
-
-    LOG_INFO("pulseaudio test: list all sources and sinks");
-
     // Create a mainloop API and connection to the default server
     m_Mainloop = pa_mainloop_new();
     m_MainloopAPI = pa_mainloop_get_api(m_Mainloop);
