@@ -8,7 +8,7 @@ The device manager
  * provides a list of sound devices found at startup or added/removed at runtime
  * can switch between devices
  * can retrieve the active device
- * get/set the volume
+ * can get/set the volume
  * runs in a separate thread
  <br>
  All files required for the static library of the device manager can be found under lib/src.<br>
