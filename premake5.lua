@@ -6,29 +6,27 @@ workspace "pulseAudioTesting"
         "Release"
     }
 
-project "pa"
+project "testApplication"
+    kind "ConsoleApp"
     language "C++"
     cppdialect "C++17"
     targetdir "bin/%{cfg.buildcfg}"
 
-    defines
-    {
-        "_REENTRANT"
-    }
-
     files 
     { 
-        "src/**.h", 
-        "src/**.cpp",
+        "testApplication/**.h", 
+        "testApplication/**.cpp",
     }
 
     includedirs 
     { 
-        "src",
+        "testApplication",
+        "lib/src"
     }
 
     links
     {
+        "libpamanager",
         "pulse",
         "pthread"
     }
@@ -36,9 +34,9 @@ project "pa"
     filter { "configurations:Debug" }
         defines { "DEBUG" }
         symbols "On"
-        kind "ConsoleApp"
 
     filter { "configurations:Release" }
         defines { "NDEBUG" }
         optimize "On"
-        kind "ConsoleApp"
+
+include "lib/libpamanager.lua"

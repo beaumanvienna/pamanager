@@ -23,7 +23,7 @@
 #include <chrono>
 #include <thread>
 
-#include "main.h"
+#include "lib.h"
 #include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;

@@ -38,7 +38,7 @@ int main()
 
     while(true)
     {
-        LOG_INFO("main thread");
+        LOG_CRITICAL("main thread");
         std::this_thread::sleep_for(800ms);
     }
 }
