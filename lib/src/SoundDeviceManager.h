@@ -32,10 +32,11 @@ public:
     void Start();
     uint GetVolume() const;
     void SetVolume(uint volume);
+    void CycleNextOutputDevice();
     void PrintInputDeviceList() const;
     void PrintOutputDeviceList() const;
     std::string& GetDefaultOutputDevice() const;
-    void SetOutputDevice(const std::string& name);
+    void SetOutputDevice(const std::string& description);
     std::vector<std::string>& GetInputDeviceList();
     std::vector<std::string>& GetOutputDeviceList();
 
@@ -47,6 +48,7 @@ private:
     static void SetDefaultDevices();
     static void RemoveInputDevice(uint index);
     static void RemoveOutputDevice(uint index);
+    static void SetOutputDevice(const uint outputDevice);
     static void PrintProperties(pa_proplist* props, bool verbose = false);
     static void AddInputDevice(uint index, const char* description, const char* name);
     static void AddOutputDevice(uint index, const char* description, const char* name);

@@ -18,6 +18,9 @@ Dependencies: The project links against libpulse. premake5 is required. Ubuntu u
 <br>
 Ubuntu: sudo apt install premake5 git build-essential libpulse-dev<br>
 <br>
-Build: premake5 gmake2 && make config=release verbose=1 <br>
+Generate project: premake5 gmake2<br>
+<br>
+Build release (silent operation): make config=release verbose=1 <br>
+Build debug (verbose): make config=debug verbose=1 <br>
 <br>
 If you're looking for more resources on libpulse / pulse audio, there is a similar project (only as command line tool and probably way more advanced) at https://github.com/cdemoulins/pamixer.

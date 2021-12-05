@@ -358,12 +358,12 @@ std::vector<std::string>& SoundDeviceManager::GetOutputDeviceList()
     return m_OutputDeviceDescriptions;
 }
 
-void SoundDeviceManager::SetOutputDevice(const std::string& name)
+void SoundDeviceManager::SetOutputDevice(const std::string& description)
 {
     uint iterator = 0;
     for (auto device : m_OutputDeviceDescriptions)
     {
-        if (device == name)
+        if (device == description)
         {
             std::string index = std::to_string(m_OutputDeviceIndicies[iterator]);
             pa_operation* operation;
@@ -371,7 +371,7 @@ void SoundDeviceManager::SetOutputDevice(const std::string& name)
             pa_operation_unref(operation);
 
             std::string message = "SoundDeviceManager::SetOutputDevice: ";
-            message += name + ", index: " + index;
+            message += description + ", index: " + index;
             LOG_TRACE(message);
 
             return;
@@ -379,6 +379,24 @@ void SoundDeviceManager::SetOutputDevice(const std::string& name)
         iterator++;
     }
     LOG_WARN("SoundDeviceManager::SetOutputDevice: sink not found");
+}
+
+void SoundDeviceManager::SetOutputDevice(const uint outputDevice)
+{
+    if (outputDevice < m_OutputDeviceNames.size())
+    {
+        std::string index = std::to_string(m_OutputDeviceIndicies[outputDevice]);
+        pa_operation* operation;
+        operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
+        pa_operation_unref(operation);
+
+        std::string description = m_OutputDeviceDescriptions[outputDevice]; 
+        std::string message = "SoundDeviceManager::SetOutputDevice: ";
+        message += description + ", index: " + index;
+        LOG_TRACE(message);
+
+        return;
+    }
 }
 
 void SoundDeviceManager::Mainloop()
@@ -428,6 +446,17 @@ void SoundDeviceManager::SetVolume(uint volume)
         ContextSuccessCallback,
         nullptr
     );
+}
+
+void SoundDeviceManager::CycleNextOutputDevice()
+{
+    auto outputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
+    outputDevice++;
+    if (outputDevice == m_OutputDeviceNames.size())
+    {
+        outputDevice = 0;
+    }
+    SetOutputDevice(outputDevice);
 }
 
 void SoundDeviceManager::PulseAudioThread()

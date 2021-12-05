@@ -67,12 +67,6 @@ void OnEnter(SoundDeviceManager* soundDeviceManager)
         soundDeviceManager->PrintInputDeviceList();
         soundDeviceManager->PrintOutputDeviceList();
 
-        auto list = soundDeviceManager->GetOutputDeviceList();
-        soundDeviceManager->SetOutputDevice(list[listEntry]);
-        listEntry++;
-        if (listEntry == list.size())
-        {
-            listEntry = 0;
-        }
+        soundDeviceManager->CycleNextOutputDevice();
     }
 }
