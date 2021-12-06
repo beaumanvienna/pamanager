@@ -151,7 +151,7 @@ void SoundDeviceManager::SubscribeCallback(pa_context* context, pa_subscription_
                 pa_operation* operation;
                 if (!(operation = pa_context_get_sink_info_by_index(context, index, SinklistCallback, nullptr)))
                 {
-                    ShowError("pa_context_get_sink_info_by_index() failed");
+                    PrintError("pa_context_get_sink_info_by_index() failed");
                     return;
                 }
                 pa_operation_unref(operation);
@@ -168,7 +168,7 @@ void SoundDeviceManager::SubscribeCallback(pa_context* context, pa_subscription_
                 pa_operation* operation;
                 if (!(operation = pa_context_get_source_info_by_index(context, index, SourcelistCallback, nullptr)))
                 {
-                    ShowError("pa_context_get_source_info_by_index() failed");
+                    PrintError("pa_context_get_source_info_by_index() failed");
                     return;
                 }
                 pa_operation_unref(operation);
@@ -208,7 +208,7 @@ void SoundDeviceManager::ContextStateCallback(pa_context* context, void* userdat
                                     nullptr
                                 )))
             {
-                ShowError("pa_context_subscribe() failed");
+                PrintError("pa_context_subscribe() failed");
                 return;
             }
             pa_operation_unref(operation);
@@ -218,7 +218,7 @@ void SoundDeviceManager::ContextStateCallback(pa_context* context, void* userdat
                                 SinklistCallback,
                                 nullptr
                                 ))) {
-                ShowError("pa_context_subscribe() failed");
+                PrintError("pa_context_subscribe() failed");
                 return;
             }
             pa_operation_unref(operation);
@@ -227,7 +227,7 @@ void SoundDeviceManager::ContextStateCallback(pa_context* context, void* userdat
             pa_subscription_mask_t mask = (pa_subscription_mask_t) (PA_SUBSCRIPTION_MASK_SINK| PA_SUBSCRIPTION_MASK_SOURCE);
             if (!(operation = pa_context_subscribe(context, mask, nullptr, nullptr)))
             {
-                ShowError("pa_context_subscribe() failed");
+                PrintError("pa_context_subscribe() failed");
                 return;
             }
             pa_operation_unref(operation);
@@ -280,6 +280,82 @@ void SoundDeviceManager::ServerInfoCallback(pa_context* context, const pa_server
     LOG_TRACE(std::string("default input:  ") + m_InputDeviceDescriptions[m_ServerInfo.m_DefaultInputDeviceIndex]);
     LOG_TRACE(std::string("default output: "  + m_OutputDeviceDescriptions[m_ServerInfo.m_DefaultOutputDeviceIndex]));
 
+}
+
+void SoundDeviceManager::SetSinkVolumeCallback(pa_context *cotext, const pa_sink_info *info, int eol, void *userdata)
+{
+    pa_cvolume cVolume;
+
+    if (eol < 0)
+    {
+        auto errorMessage = std::string("Failed to get sink information: ") + pa_strerror(pa_context_errno(m_Context));
+        PrintError(errorMessage.c_str());
+        return;
+    }
+
+    if ((eol) || (!info))
+    {
+        return;
+    }
+
+    cVolume = info->volume;
+printf(" *** SetSinkVolumeCallback: info->channel_map.channels = %d\n", info->channel_map.channels);
+    FillVolume(&cVolume, info->channel_map.channels);
+    
+    //uint sinkNumChannels;
+    //uint currentOutputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
+    //sinkNumChannels = m_OutputDeviceChannels[currentOutputDevice];
+    //
+    //pa_cvolume cVolume;
+    //pa_cvolume_init(&cVolume);
+    //pa_cvolume_set(&cVolume, sinkNumChannels, volume);
+    //
+    //auto index = std::to_string(currentOutputDevice);
+    //pa_context_set_sink_volume_by_name
+    //(
+    //    m_Context,
+    //    index.c_str(),
+    //    &cVolume,
+    //    ContextSuccessCallback,
+    //    nullptr
+    //);
+    
+    auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
+    pa_operation_unref(pa_context_set_sink_volume_by_name(m_Context, index.c_str(), &cVolume, ContextSuccessCallback, nullptr));
+}
+
+void SoundDeviceManager::FillVolume(pa_cvolume* cVolume, uint supported)
+{
+    //if (volume.channels == 1)
+    //{
+    //    pa_cvolume_set(&volume, supported, volume.values[0]);
+    //}
+    //else if (volume.channels != supported)
+    //{
+    //    pa_log(ngettext("Failed to set volume: You tried to set volumes for %d channel, whereas channel(s) supported = %d\n",
+    //                    "Failed to set volume: You tried to set volumes for %d channels, whereas channel(s) supported = %d\n",
+    //                    volume.channels),
+    //           volume.channels, supported);
+    //    return;
+    //}
+    //
+    //if (volume_flags & VOL_RELATIVE)
+    //{
+    //    volume_relative_adjust(cVolume);
+    //}
+    //else
+    //{
+    //    *cVolume = volume;
+    //}
+}
+
+void SoundDeviceManager::GetSinkVolumeCallback(pa_context *context, const pa_sink_info *info, int eol, void *userdata)
+{
+    if (info)
+    {
+        float volume = (float)pa_cvolume_avg(&(info->volume)) / (float)PA_VOLUME_NORM;
+        printf("percent volume = %.0f%%%s\n", volume * 100.0f, info->mute ? " (muted)" : "");
+    }
 }
 
 void SoundDeviceManager::AddInputDevice(uint index, const char* description, const char* name)
@@ -365,7 +441,7 @@ void SoundDeviceManager::SetOutputDevice(const std::string& description)
     {
         if (device == description)
         {
-            std::string index = std::to_string(m_OutputDeviceIndicies[iterator]);
+            auto index = std::to_string(m_OutputDeviceIndicies[iterator]);
             pa_operation* operation;
             operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
             pa_operation_unref(operation);
@@ -385,7 +461,7 @@ void SoundDeviceManager::SetOutputDevice(const uint outputDevice)
 {
     if (outputDevice < m_OutputDeviceNames.size())
     {
-        std::string index = std::to_string(m_OutputDeviceIndicies[outputDevice]);
+        auto index = std::to_string(m_OutputDeviceIndicies[outputDevice]);
         pa_operation* operation;
         operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
         pa_operation_unref(operation);
@@ -404,7 +480,7 @@ void SoundDeviceManager::Mainloop()
     int ret;
     if (pa_mainloop_iterate(m_Mainloop, 0, &ret) < 0)
     {
-        ShowError("pa_mainloop_run() failed.");
+        PrintError("pa_mainloop_run() failed.");
         exit(1);
     }
     std::this_thread::sleep_for(16ms);
@@ -412,8 +488,8 @@ void SoundDeviceManager::Mainloop()
 
 void SoundDeviceManager::SetDefaultDevices()
 {
-    pa_operation* op = pa_context_get_server_info(m_Context, &ServerInfoCallback, nullptr);
-    pa_operation_unref(op);
+    pa_operation* operation = pa_context_get_server_info(m_Context, &ServerInfoCallback, nullptr);
+    pa_operation_unref(operation);
 }
 
 std::string& SoundDeviceManager::GetDefaultOutputDevice() const
@@ -424,28 +500,24 @@ std::string& SoundDeviceManager::GetDefaultOutputDevice() const
 
 uint SoundDeviceManager::GetVolume() const
 {
-    uint volume;
+    auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
+
+    pa_operation* operation;
+    operation = pa_context_get_sink_info_by_name(m_Context, index.c_str(), GetSinkVolumeCallback, nullptr);
+    pa_operation_unref(operation);
+
+    uint volume = 0;
     return volume;
 }
 
 void SoundDeviceManager::SetVolume(uint volume)
 {
-    uint sinkNumChannels;
-    uint currentOutputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
-    sinkNumChannels = m_OutputDeviceChannels[currentOutputDevice];
+    auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
 
-    pa_cvolume cVolume;
-    pa_cvolume_init(&cVolume);
-    pa_cvolume_set(&cVolume, sinkNumChannels, volume);
+    pa_operation* operation;
+    operation = pa_context_get_sink_info_by_name(m_Context, index.c_str(), SetSinkVolumeCallback, nullptr);
+    pa_operation_unref(operation);
 
-    pa_context_set_sink_input_volume
-    (
-        m_Context,
-        currentOutputDevice,
-        &cVolume,
-        ContextSuccessCallback,
-        nullptr
-    );
 }
 
 void SoundDeviceManager::CycleNextOutputDevice()

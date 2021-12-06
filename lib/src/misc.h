@@ -22,4 +22,4 @@
 
 #pragma once
 
-void ShowError(const char *s);
+void PrintError(const char *s);

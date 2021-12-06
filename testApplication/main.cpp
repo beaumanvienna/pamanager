@@ -47,11 +47,21 @@ int main()
 
     LibPAmanager::PrintInfo();
     LibPAmanager::PrintVersion();
+    
+    uint volume = 0;
 
     while(true)
     {
         LOG_MESSAGE("main thread\n");
         std::this_thread::sleep_for(800ms);
+        
+        //volume += 10;
+        //if (volume < 100)
+        //{
+        //    volume = 0;
+        //}
+        //soundDeviceManager->SetVolume(volume);
+        soundDeviceManager->GetVolume();
     }
 }
 
@@ -63,7 +73,8 @@ void OnEnter(SoundDeviceManager* soundDeviceManager)
     uint listEntry = 0;
     while (true)
     {
-        getchar();
+        getchar(); // block until enter is pressed
+
         soundDeviceManager->PrintInputDeviceList();
         soundDeviceManager->PrintOutputDeviceList();
 

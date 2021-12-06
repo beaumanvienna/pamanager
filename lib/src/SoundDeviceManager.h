@@ -49,6 +49,7 @@ private:
     static void RemoveInputDevice(uint index);
     static void RemoveOutputDevice(uint index);
     static void SetOutputDevice(const uint outputDevice);
+    static void FillVolume(pa_cvolume* cVolume, uint supported);
     static void PrintProperties(pa_proplist* props, bool verbose = false);
     static void AddInputDevice(uint index, const char* description, const char* name);
     static void AddOutputDevice(uint index, const char* description, const char* name);
@@ -58,6 +59,8 @@ private:
     static void SinklistCallback(pa_context* context, const pa_sink_info* info, int eol, void* userdata);
     static void SourcelistCallback(pa_context* context, const pa_source_info* info, int eol, void* userdata);
     static void SubscribeCallback(pa_context* context, pa_subscription_event_type_t eventType, uint index, void* userdata);
+    static void GetSinkVolumeCallback(pa_context *context, const pa_sink_info *info, int eol, void *userdata);
+    static void SetSinkVolumeCallback(pa_context *context, const pa_sink_info *info, int eol, void *userdata);
     static void ContextSuccessCallback(pa_context* context, int success, void* userdata);
     static void ContextStateCallback(pa_context* context, void* userdata);
 

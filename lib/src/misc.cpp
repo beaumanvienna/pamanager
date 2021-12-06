@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-void ShowError(const char *s)
+void PrintError(const char *s)
 {
     fprintf(stderr, "%s\n", s);
 }
