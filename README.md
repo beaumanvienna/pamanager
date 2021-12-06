@@ -1,4 +1,4 @@
-# pa
+# pamanager
 a pulse audio device manager
 
 Some parts of the project are modeled after [the pulseaudio C tutorial of Jan Newmarch](https://jan.newmarch.name/LinuxSound/Sampled/PulseAudio/#heading_toc_j_17), 
