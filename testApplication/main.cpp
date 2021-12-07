@@ -53,14 +53,18 @@ int main()
     while(true)
     {
         LOG_MESSAGE("main thread\n");
-        std::this_thread::sleep_for(800ms);
-        
-        //volume += 10;
-        //if (volume < 100)
-        //{
-        //    volume = 0;
-        //}
-        //soundDeviceManager->SetVolume(volume);
+
+        // set volume
+        std::this_thread::sleep_for(400ms);
+        volume += 10;
+        if (volume > 110)
+        {
+            volume = 0;
+        }
+        soundDeviceManager->SetVolume(volume);
+
+        // get volume
+        std::this_thread::sleep_for(400ms);
         soundDeviceManager->GetVolume();
     }
 }
@@ -70,7 +74,6 @@ int main()
 //
 void OnEnter(SoundDeviceManager* soundDeviceManager)
 {
-    uint listEntry = 0;
     while (true)
     {
         getchar(); // block until enter is pressed

@@ -49,7 +49,6 @@ private:
     static void RemoveInputDevice(uint index);
     static void RemoveOutputDevice(uint index);
     static void SetOutputDevice(const uint outputDevice);
-    static void FillVolume(pa_cvolume* cVolume, uint supported);
     static void PrintProperties(pa_proplist* props, bool verbose = false);
     static void AddInputDevice(uint index, const char* description, const char* name);
     static void AddOutputDevice(uint index, const char* description, const char* name);
@@ -73,14 +72,14 @@ private:
 
     // input devices
     static std::vector<std::string> m_InputDeviceDescriptions;
-    static std::vector<int> m_InputDeviceIndicies;
-    static std::vector<uint> m_InputDeviceChannels;
+    static std::vector<uint> m_InputDeviceIndicies;
     static std::vector<std::string> m_InputDeviceNames;
     // output devices
     static std::vector<std::string> m_OutputDeviceDescriptions;
-    static std::vector<int> m_OutputDeviceIndicies;
-    static std::vector<uint> m_OutputDeviceChannels;
+    static std::vector<uint> m_OutputDeviceIndicies;
     static std::vector<std::string> m_OutputDeviceNames;
+    
+    static uint m_DefaultOutputDeviceVolume;
 
 private:
     struct ServerInfo

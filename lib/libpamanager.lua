@@ -4,6 +4,7 @@ project "libpamanager"
     language "C++"
     cppdialect "C++17"
     targetdir "bin/%{cfg.buildcfg}"
+    buildoptions { "-fdiagnostics-color=always -Wall -Wextra -Wno-unused-parameter" }
 
     defines
     {
