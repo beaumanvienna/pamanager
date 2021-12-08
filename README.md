@@ -1,10 +1,10 @@
 # pamanager
-a pulse audio device manager
+a PulseAudio Device Manager
 
-Libpamanger provides an easy-to-use singleton to abstract the asynchronous pulse audio API.
-It can be quickly added as a git submodule to any app in need of access to the pulse audio demon.
-Your app can then retrieve information about sound devices and control them. 
-Some parts of the project are modeled after [the pulseaudio C tutorial of Jan Newmarch](https://jan.newmarch.name/LinuxSound/Sampled/PulseAudio/#heading_toc_j_17), 
+Libpamanger provides an easy-to-use singleton to abstract the asynchronous PulseAudio API.
+It can be quickly added as a git submodule to any app in need of access to the PulseAudio demon.
+Your app can then retrieve information about sound devices and control them.
+Some parts of the project are modeled after [the PulseAudio C tutorial of Jan Newmarch](https://jan.newmarch.name/LinuxSound/Sampled/PulseAudio/#heading_toc_j_17), 
 however, this project is written in C++. 
 
 The device manager
