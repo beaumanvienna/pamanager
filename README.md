@@ -15,6 +15,7 @@ The device manager
  * runs in a separate thread
  <br>
  Libpamanger allows to register callback functions to alert the end-user application about changes in the audio system.<br>
+ <br>
  All definitions and declarations of this library occupy a dedicated namespace.<br>
  <br>
 Dependencies: The project links against libpulse. premake5 is required. Ubuntu users can get premake5 from my Launchpad with <br>
