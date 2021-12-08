@@ -1,5 +1,5 @@
 # pamanager
-a PulseAudio Device Manager
+### A PulseAudio Device Manager
 
 Libpamanger provides an easy-to-use singleton to abstract the asynchronous PulseAudio API.
 It can be quickly added as a git submodule to any app in need of access to the PulseAudio demon.
@@ -18,14 +18,18 @@ The device manager
  <br>
  All definitions and declarations of this library occupy a dedicated namespace.<br>
  <br>
-Dependencies: The project links against libpulse. premake5 is required. Ubuntu users can get premake5 from my Launchpad with <br>
+ 
+### Dependencies
+The project links against libpulse. premake5 is required. Ubuntu users can get premake5 from my Launchpad with <br>
 "sudo add-apt-repository ppa:beauman/marley && sudo apt-get update"<br>
 <br>
 Ubuntu: sudo apt install premake5 git build-essential libpulse-dev<br>
 <br>
-Generate project: premake5 gmake2<br>
+### Generate and build project
+premake5 gmake2<br>
 <br>
 Build release (silent operation): make config=release verbose=1 <br>
 Build debug (verbose): make config=debug verbose=1 <br>
 <br>
+### Resources
 If you're looking for more resources on libpulse / pulse audio, there is a similar project (only as command line tool and probably way more advanced) at https://github.com/cdemoulins/pamixer.
