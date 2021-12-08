@@ -15,14 +15,14 @@ project "testApplication"
 
     files 
     { 
-        "testApplication/**.h", 
-        "testApplication/**.cpp",
+        "testbed/**.h", 
+        "testbed/**.cpp",
     }
 
     includedirs 
     { 
-        "testApplication",
-        "lib/src"
+        "testbed",
+        "libpamanager/src"
     }
 
     links
@@ -40,4 +40,4 @@ project "testApplication"
         defines { "NDEBUG" }
         optimize "On"
 
-include "lib/libpamanager.lua"
+include "libpamanager/libpamanager.lua"

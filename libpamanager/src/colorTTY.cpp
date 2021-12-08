@@ -20,6 +20,33 @@
    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
 
-#pragma once
+#include "colorTTY.h"
 
-void PrintError(const char *s);
+namespace LibPAmanager
+{
+    void PrintMessage(Color::Code code, const std::string& str)
+    {
+        std::cout << Color::Modifier(code) << str << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+    }
+
+    #ifdef VERBOSE
+
+        void LogInfo(const std::string& str)
+        {
+            std::cout << Color::Modifier(Color::FG_GREEN) << str << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+        }
+        void LogWarn(const std::string& str)
+        {
+            std::cout << Color::Modifier(Color::FG_RED) << str << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+        }
+        void LogCritical(const std::string& str)
+        {
+            std::cout << Color::Modifier(Color::FG_YELLOW) << str << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+        }
+        void LogTrace(const std::string& str)
+        {
+            std::cout << Color::Modifier(Color::FG_BLUE) << str << Color::Modifier(Color::FG_DEFAULT) << std::endl;
+        }
+
+    #endif
+}

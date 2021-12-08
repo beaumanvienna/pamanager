@@ -28,6 +28,7 @@
 #include "SoundDeviceManager.h"
 
 using namespace std::chrono_literals;
+using namespace LibPAmanager;
 
 void OnEnter(SoundDeviceManager* soundDeviceManager);
 
@@ -41,13 +42,13 @@ int main()
 
     std::thread onEnter(OnEnter, soundDeviceManager);
     
-    std::cout << Color::Modifier(Color::FG_GREEN); 
-    std::cout << "*** pulseaudio device manager test ***" << std::endl;
-    std::cout << "press enter to cycle through sound output devices" << std::endl;
+    PRINT_MESSAGE(Color::FG_GREEN, "*** pulseaudio device manager test ***");
 
     LibPAmanager::PrintInfo();
     LibPAmanager::PrintVersion();
-    
+
+    PRINT_MESSAGE(Color::FG_YELLOW, "press enter to cycle through sound output devices");
+
     uint volume = 0;
 
     while(true)
