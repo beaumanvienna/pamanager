@@ -1,8 +1,8 @@
 # pamanager
 a pulse audio device manager
 
-Libpamanger provides an easy-to-use singleton instance to abstract the asynchronous pulse audio API.
-It can be quickly added as a git submodule.
+Libpamanger provides an easy-to-use singleton to abstract the asynchronous pulse audio API.
+It can be quickly added as a git submodule to any app in need of access to the pulse audio demon.
 Alternatively, the files from lib/src can directly be copied into your code.
 Your audiophile app can then retrieve information about sound devices and control them. 
 Some parts of the project are modeled after [the pulseaudio C tutorial of Jan Newmarch](https://jan.newmarch.name/LinuxSound/Sampled/PulseAudio/#heading_toc_j_17), 
@@ -15,7 +15,7 @@ The device manager
  * can get/set the volume
  * runs in a separate thread
  <br>
- Libpamanger allows to register callback functions to alert the end-user application about events of the audio system.<br>
+ Libpamanger allows to register callback functions to alert the end-user application about changes in the audio system.<br>
  All definitions and declarations of this library occupy a dedicated namespace.<br>
  <br>
 Dependencies: The project links against libpulse. premake5 is required. Ubuntu users can get premake5 from my Launchpad with <br>
