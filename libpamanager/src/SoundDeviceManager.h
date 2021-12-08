@@ -41,11 +41,11 @@ namespace LibPAmanager
         void SetOutputDevice(const std::string& description);
         std::vector<std::string>& GetInputDeviceList();
         std::vector<std::string>& GetOutputDeviceList();
-    
+
     private:
         SoundDeviceManager();
         void PulseAudioThread();
-    
+
         static void Mainloop();
         static void SetDefaultDevices();
         static void RemoveInputDevice(uint index);
@@ -54,7 +54,7 @@ namespace LibPAmanager
         static void PrintProperties(pa_proplist* props, bool verbose = false);
         static void AddInputDevice(uint index, const char* description, const char* name);
         static void AddOutputDevice(uint index, const char* description, const char* name);
-    
+
         // callback functions
         static void ServerInfoCallback(pa_context* context, const pa_server_info* info, void* userdata);
         static void SinklistCallback(pa_context* context, const pa_sink_info* info, int eol, void* userdata);
@@ -64,14 +64,14 @@ namespace LibPAmanager
         static void SetSinkVolumeCallback(pa_context *context, const pa_sink_info *info, int eol, void *userdata);
         static void ContextSuccessCallback(pa_context* context, int success, void* userdata);
         static void ContextStateCallback(pa_context* context, void* userdata);
-    
+
     private:
         static SoundDeviceManager* m_Instance;
         static pa_context* m_Context;
-    
+
         static pa_mainloop*     m_Mainloop;
         static pa_mainloop_api* m_MainloopAPI;
-    
+
         // input devices
         static std::vector<std::string> m_InputDeviceDescriptions;
         static std::vector<uint> m_InputDeviceIndicies;
@@ -80,9 +80,9 @@ namespace LibPAmanager
         static std::vector<std::string> m_OutputDeviceDescriptions;
         static std::vector<uint> m_OutputDeviceIndicies;
         static std::vector<std::string> m_OutputDeviceNames;
-        
+
         static uint m_DefaultOutputDeviceVolume;
-    
+
     private:
         struct ServerInfo
         {
@@ -90,6 +90,6 @@ namespace LibPAmanager
             uint m_DefaultOutputDeviceIndex;
         };
         static ServerInfo m_ServerInfo;
-    
+
     };
 }

@@ -41,7 +41,7 @@ int main()
     soundDeviceManager->Start();
 
     std::thread onEnter(OnEnter, soundDeviceManager);
-    
+
     PRINT_MESSAGE(Color::FG_GREEN, "*** pulseaudio device manager test ***");
 
     LibPAmanager::PrintInfo();

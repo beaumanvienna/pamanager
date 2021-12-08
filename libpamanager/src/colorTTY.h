@@ -28,7 +28,7 @@ namespace LibPAmanager
 {
     namespace Color
     {
-    
+
         enum Code
         {
             FG_RED      = 31,
@@ -41,15 +41,15 @@ namespace LibPAmanager
             BG_BLUE     = 44,
             BG_DEFAULT  = 49
         };
-    
+
         class Modifier
         {
         private:
             Code code;
-    
+
         public:
             Modifier(Code pCode) : code(pCode) {}
-    
+
             friend std::ostream& operator<<(std::ostream& os, const Modifier& mod)
             {
                 return os << "\033[" << mod.code << "m";

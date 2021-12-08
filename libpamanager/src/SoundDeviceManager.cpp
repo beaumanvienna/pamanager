@@ -31,24 +31,24 @@ using namespace std::chrono_literals;
 
 namespace LibPAmanager
 {
-    
+
     SoundDeviceManager* SoundDeviceManager::m_Instance = nullptr;
     pa_context* SoundDeviceManager::m_Context = nullptr;
     pa_mainloop*     SoundDeviceManager::m_Mainloop = nullptr;
     pa_mainloop_api* SoundDeviceManager::m_MainloopAPI = nullptr;
     SoundDeviceManager::ServerInfo SoundDeviceManager::m_ServerInfo = {0,0};
     uint SoundDeviceManager::m_DefaultOutputDeviceVolume = 0;
-    
+
     std::vector<std::string> SoundDeviceManager::m_InputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_InputDeviceIndicies;
     std::vector<std::string> SoundDeviceManager::m_InputDeviceNames;
-    
+
     std::vector<std::string> SoundDeviceManager::m_OutputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_OutputDeviceIndicies;
     std::vector<std::string> SoundDeviceManager::m_OutputDeviceNames;
-    
+
     SoundDeviceManager::SoundDeviceManager() {}
-    
+
     // 
     // create/provide singleton
     // 
@@ -60,13 +60,13 @@ namespace LibPAmanager
         }
         return m_Instance;
     }
-    
+
     void SoundDeviceManager::Start()
     {
         std::thread pulseAudioThread([this](){ PulseAudioThread(); });
         pulseAudioThread.detach();
     }
-    
+
     void SoundDeviceManager::PrintInputDeviceList() const
     {
         LOG_TRACE("SoundDeviceManager::PrintInputDeviceList:");
@@ -75,7 +75,7 @@ namespace LibPAmanager
             LOG_INFO(device);
         }
     }
-    
+
     void SoundDeviceManager::PrintOutputDeviceList() const
     {
         LOG_TRACE("SoundDeviceManager::PrintOutputDeviceList:");
@@ -84,13 +84,13 @@ namespace LibPAmanager
             LOG_INFO(device);
         }
     }
-    
+
     void SoundDeviceManager::PrintProperties(pa_proplist* props, bool verbose)
     {
         if (!verbose) return;
-    
+
         void* state = nullptr;
-    
+
         LOG_MESSAGE("  Properties are: \n");
         while (1)
         {
@@ -102,7 +102,7 @@ namespace LibPAmanager
             LOG_MESSAGE("   key: %s, value: %s\n", key, pa_proplist_gets(props, key));
         }
     }
-    
+
     // 
     // print information about a sink
     // 
@@ -120,7 +120,7 @@ namespace LibPAmanager
         LOG_MESSAGE("Sink: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
         PrintProperties(info->proplist);
     }
-    
+
     // 
     // print information about a source
     // 
@@ -137,7 +137,7 @@ namespace LibPAmanager
         LOG_MESSAGE("Source: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
         PrintProperties(info->proplist);
     }
-    
+
     void SoundDeviceManager::SubscribeCallback(pa_context* context, pa_subscription_event_type_t eventType, uint index, void* userdata)
     {
         switch (eventType & PA_SUBSCRIPTION_EVENT_FACILITY_MASK)
@@ -178,7 +178,7 @@ namespace LibPAmanager
                 break;
         }
     }
-    
+
     void SoundDeviceManager::ContextStateCallback(pa_context* context, void* userdata)
     {
         LOG_WARN("ContextStateCallback");
@@ -196,12 +196,12 @@ namespace LibPAmanager
             case PA_CONTEXT_SETTING_NAME:
                 LOG_TRACE("ContextStateCallback: PA_CONTEXT_SETTING_NAME");
                 break;
-    
+
             case PA_CONTEXT_READY:
             {
                 LOG_TRACE("ContextStateCallback: PA_CONTEXT_READY");
                 pa_operation* operation;
-    
+
                 // set up a callback to tell us about source devices
                 if (!(operation = pa_context_get_source_info_list
                                     (
@@ -214,7 +214,7 @@ namespace LibPAmanager
                     return;
                 }
                 pa_operation_unref(operation);
-    
+
                 // set up a callback to tell us about sink devices
                 if (!(operation = pa_context_get_sink_info_list(context,
                                     SinklistCallback,
@@ -224,7 +224,7 @@ namespace LibPAmanager
                     return;
                 }
                 pa_operation_unref(operation);
-    
+
                 pa_context_set_subscribe_callback(context, SubscribeCallback, nullptr);
                 pa_subscription_mask_t mask = (pa_subscription_mask_t) (PA_SUBSCRIPTION_MASK_SINK| PA_SUBSCRIPTION_MASK_SOURCE);
                 if (!(operation = pa_context_subscribe(context, mask, nullptr, nullptr)))
@@ -233,10 +233,10 @@ namespace LibPAmanager
                     return;
                 }
                 pa_operation_unref(operation);
-    
+
                 break;
             }
-    
+
             case PA_CONTEXT_FAILED:
                 LOG_TRACE("ContextStateCallback: PA_CONTEXT_FAILED");
                 break;
@@ -248,7 +248,7 @@ namespace LibPAmanager
                 break;
         }
     }
-    
+
     void SoundDeviceManager::ContextSuccessCallback(pa_context* context, int success, void* userdata)
     {
         if (!success)
@@ -256,7 +256,7 @@ namespace LibPAmanager
             PRINT_ERROR("ContextSuccessCallback: failed");
         }
     }
-    
+
     void SoundDeviceManager::ServerInfoCallback(pa_context* context, const pa_server_info* info, void* userdata)
     {
         uint iterator = 0;
@@ -279,16 +279,16 @@ namespace LibPAmanager
             }
             iterator++;
         }
-    
+
         LOG_TRACE(std::string("default input:  ") + m_InputDeviceDescriptions[m_ServerInfo.m_DefaultInputDeviceIndex]);
         LOG_TRACE(std::string("default output: "  + m_OutputDeviceDescriptions[m_ServerInfo.m_DefaultOutputDeviceIndex]));
-    
+
     }
-    
+
     void SoundDeviceManager::SetSinkVolumeCallback(pa_context *context, const pa_sink_info *info, int eol, void *userdata)
     {
         pa_cvolume cVolume;
-    
+
         if (eol < 0)
         {
             auto message = std::string("SetSinkVolumeCallback: Failed to get sink information: ");
@@ -296,23 +296,23 @@ namespace LibPAmanager
             PRINT_ERROR(message.c_str());
             return;
         }
-    
+
         if ((eol) || (!info))
         {
             return;
         }
-    
+
         cVolume = info->volume;
         uint sinkNumChannels = info->channel_map.channels;
         for (uint i = 0; i < sinkNumChannels; i++)
         {
             cVolume.values[i] = m_DefaultOutputDeviceVolume * PA_VOLUME_NORM / 100;
         }
-    
+
         auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
         pa_operation_unref(pa_context_set_sink_volume_by_name(m_Context, index.c_str(), &cVolume, ContextSuccessCallback, nullptr));
     }
-    
+
     void SoundDeviceManager::GetSinkVolumeCallback(pa_context *context, const pa_sink_info *info, int eol, void *userdata)
     {
         if (info)
@@ -320,12 +320,12 @@ namespace LibPAmanager
             float averageVolume = static_cast<float>(pa_cvolume_avg(&(info->volume)));
             float volume = round(100 * averageVolume / static_cast<float>(PA_VOLUME_NORM));
             m_DefaultOutputDeviceVolume = static_cast<uint>(volume);
-    
+
             auto message = std::string("GetSinkVolumeCallback, m_DefaultOutputDeviceVolume = ") + std::to_string(m_DefaultOutputDeviceVolume);
             LOG_CRITICAL(message);
         }
     }
-    
+
     void SoundDeviceManager::AddInputDevice(uint index, const char* description, const char* name)
     {
         for (auto deviceIndex : m_InputDeviceIndicies)
@@ -340,7 +340,7 @@ namespace LibPAmanager
         m_InputDeviceIndicies.push_back(index);
         m_InputDeviceNames.push_back(name);
     }
-    
+
     void SoundDeviceManager::RemoveInputDevice(uint index)
     {
         uint iterator = 0;
@@ -356,7 +356,7 @@ namespace LibPAmanager
             iterator++;
         }
     }
-    
+
     void SoundDeviceManager::AddOutputDevice(uint index, const char* description, const char* name)
     {
         for (auto deviceIndex : m_OutputDeviceIndicies)
@@ -371,7 +371,7 @@ namespace LibPAmanager
         m_OutputDeviceIndicies.push_back(index);
         m_OutputDeviceNames.push_back(name);
     }
-    
+
     void SoundDeviceManager::RemoveOutputDevice(uint index)
     {
         uint iterator = 0;
@@ -387,17 +387,17 @@ namespace LibPAmanager
             iterator++;
         }
     }
-    
+
     std::vector<std::string>& SoundDeviceManager::GetInputDeviceList()
     {
         return m_InputDeviceDescriptions;
     }
-    
+
     std::vector<std::string>& SoundDeviceManager::GetOutputDeviceList()
     {
         return m_OutputDeviceDescriptions;
     }
-    
+
     void SoundDeviceManager::SetOutputDevice(const std::string& description)
     {
         uint iterator = 0;
@@ -409,18 +409,18 @@ namespace LibPAmanager
                 pa_operation* operation;
                 operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
                 pa_operation_unref(operation);
-    
+
                 std::string message = "SoundDeviceManager::SetOutputDevice: ";
                 message += description + ", index: " + index;
                 LOG_TRACE(message);
-    
+
                 return;
             }
             iterator++;
         }
         LOG_WARN("SoundDeviceManager::SetOutputDevice: sink not found");
     }
-    
+
     void SoundDeviceManager::SetOutputDevice(const uint outputDevice)
     {
         if (outputDevice < m_OutputDeviceNames.size())
@@ -429,16 +429,16 @@ namespace LibPAmanager
             pa_operation* operation;
             operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
             pa_operation_unref(operation);
-    
+
             std::string description = m_OutputDeviceDescriptions[outputDevice]; 
             std::string message = "SoundDeviceManager::SetOutputDevice: ";
             message += description + ", index: " + index;
             LOG_TRACE(message);
-    
+
             return;
         }
     }
-    
+
     void SoundDeviceManager::Mainloop()
     {
         int ret;
@@ -449,48 +449,48 @@ namespace LibPAmanager
         }
         std::this_thread::sleep_for(16ms);
     }
-    
+
     void SoundDeviceManager::SetDefaultDevices()
     {
         pa_operation* operation = pa_context_get_server_info(m_Context, &ServerInfoCallback, nullptr);
         pa_operation_unref(operation);
     }
-    
+
     std::string& SoundDeviceManager::GetDefaultOutputDevice() const
     {
         uint   currentOutputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
         return m_OutputDeviceDescriptions[currentOutputDevice];
     }
-    
+
     uint SoundDeviceManager::GetVolume() const
     {
         auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
-    
+
         pa_operation* operation;
         operation = pa_context_get_sink_info_by_name(m_Context, index.c_str(), GetSinkVolumeCallback, nullptr);
         pa_operation_unref(operation);
-    
+
         uint volume = 0;
         return volume;
     }
-    
+
     void SoundDeviceManager::SetVolume(uint volume)
     {
         m_DefaultOutputDeviceVolume = volume;
-        
+
         if (m_DefaultOutputDeviceVolume > 100)
         {
             m_DefaultOutputDeviceVolume = 100;
             PRINT_ERROR("SetVolume: Clamping output volume to 100. Permissible input range: 0 - 100");
         }
         auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
-    
+
         pa_operation* operation;
         operation = pa_context_get_sink_info_by_name(m_Context, index.c_str(), SetSinkVolumeCallback, nullptr);
         pa_operation_unref(operation);
-    
+
     }
-    
+
     void SoundDeviceManager::CycleNextOutputDevice()
     {
         auto outputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
@@ -501,20 +501,20 @@ namespace LibPAmanager
         }
         SetOutputDevice(outputDevice);
     }
-    
+
     void SoundDeviceManager::PulseAudioThread()
     {
         // Create a mainloop API and connection to the default server
         m_Mainloop = pa_mainloop_new();
         m_MainloopAPI = pa_mainloop_get_api(m_Mainloop);
         m_Context = pa_context_new(m_MainloopAPI, "Device list");
-    
+
         // This function connects to the pulse server
         pa_context_connect(m_Context, nullptr, (pa_context_flags_t)0, nullptr);
-    
+
         // This function defines a callback so the server will tell us its state.
         pa_context_set_state_callback(m_Context, ContextStateCallback, nullptr);
-    
+
         while(true)
         {
             Mainloop();
