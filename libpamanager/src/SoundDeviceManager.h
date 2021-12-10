@@ -47,6 +47,7 @@ namespace LibPAmanager
         void PulseAudioThread();
 
         static void Mainloop();
+        static void SetDefaultVolume();
         static void SetDefaultDevices();
         static void RemoveInputDevice(uint index);
         static void RemoveOutputDevice(uint index);
@@ -81,15 +82,16 @@ namespace LibPAmanager
         static std::vector<uint> m_OutputDeviceIndicies;
         static std::vector<std::string> m_OutputDeviceNames;
 
-        static uint m_DefaultOutputDeviceVolume;
 
     private:
-        struct ServerInfo
+        struct DefaultDevices
         {
-            uint m_DefaultInputDeviceIndex;
-            uint m_DefaultOutputDeviceIndex;
+            uint m_InputDeviceIndex;
+            uint m_OutputDeviceIndex;
+            uint m_OutputDeviceVolume;
+            uint m_OutputDeviceVolumeRequest;
         };
-        static ServerInfo m_ServerInfo;
+        static DefaultDevices m_DefaultDevices;
 
     };
 }

@@ -61,10 +61,10 @@ namespace LibPAmanager
 //logging in all configurations
 //
 #define PRINT_ERROR(...) fprintf (stderr, "%s\n", __VA_ARGS__)
-#define PRINT_MESSAGE(code, str) LibPAmanager::PrintMessage(code, str)
+#define PrintMessage(code, str) LibPAmanager::PrintMessageInternal(code, str)
 namespace LibPAmanager
 {
-    void PrintMessage(Color::Code code, const std::string& x);
+    void PrintMessageInternal(Color::Code code, const std::string& x);
 }
 
 //

@@ -24,7 +24,7 @@
 
 namespace LibPAmanager
 {
-    void PrintMessage(Color::Code code, const std::string& str)
+    void PrintMessageInternal(Color::Code code, const std::string& str)
     {
         std::cout << Color::Modifier(code) << str << Color::Modifier(Color::FG_DEFAULT) << std::endl;
     }

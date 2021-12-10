@@ -36,8 +36,7 @@ namespace LibPAmanager
     pa_context* SoundDeviceManager::m_Context = nullptr;
     pa_mainloop*     SoundDeviceManager::m_Mainloop = nullptr;
     pa_mainloop_api* SoundDeviceManager::m_MainloopAPI = nullptr;
-    SoundDeviceManager::ServerInfo SoundDeviceManager::m_ServerInfo = {0,0};
-    uint SoundDeviceManager::m_DefaultOutputDeviceVolume = 0;
+    SoundDeviceManager::DefaultDevices SoundDeviceManager::m_DefaultDevices = {0, 0, 0, 0};
 
     std::vector<std::string> SoundDeviceManager::m_InputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_InputDeviceIndicies;
@@ -114,6 +113,7 @@ namespace LibPAmanager
         {
             LOG_MESSAGE("**No more sinks\n");
             SetDefaultDevices();
+            SetDefaultVolume();
             return;
         }
         AddOutputDevice(info->index, info->description, info->name);
@@ -150,6 +150,7 @@ namespace LibPAmanager
                 }
                 else
                 {
+                    SetDefaultVolume();
                     pa_operation* operation;
                     if (!(operation = pa_context_get_sink_info_by_index(context, index, SinklistCallback, nullptr)))
                     {
@@ -264,7 +265,7 @@ namespace LibPAmanager
         {
             if (inputDevice == info->default_source_name)
             {
-                m_ServerInfo.m_DefaultInputDeviceIndex = iterator;
+                m_DefaultDevices.m_InputDeviceIndex = iterator;
                 break;
             }
             iterator++;
@@ -274,14 +275,14 @@ namespace LibPAmanager
         {
             if (outputDevice == info->default_sink_name)
             {
-                m_ServerInfo.m_DefaultOutputDeviceIndex = iterator;
+                m_DefaultDevices.m_OutputDeviceIndex = iterator;
                 break;
             }
             iterator++;
         }
 
-        LOG_TRACE(std::string("default input:  ") + m_InputDeviceDescriptions[m_ServerInfo.m_DefaultInputDeviceIndex]);
-        LOG_TRACE(std::string("default output: "  + m_OutputDeviceDescriptions[m_ServerInfo.m_DefaultOutputDeviceIndex]));
+        LOG_TRACE(std::string("default input:  ") + m_InputDeviceDescriptions[m_DefaultDevices.m_InputDeviceIndex]);
+        LOG_TRACE(std::string("default output: "  + m_OutputDeviceDescriptions[m_DefaultDevices.m_OutputDeviceIndex]));
 
     }
 
@@ -306,10 +307,10 @@ namespace LibPAmanager
         uint sinkNumChannels = info->channel_map.channels;
         for (uint i = 0; i < sinkNumChannels; i++)
         {
-            cVolume.values[i] = m_DefaultOutputDeviceVolume * PA_VOLUME_NORM / 100;
+            cVolume.values[i] = m_DefaultDevices.m_OutputDeviceVolumeRequest * PA_VOLUME_NORM / 100;
         }
 
-        auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
+        auto index = std::to_string(m_OutputDeviceIndicies[m_DefaultDevices.m_OutputDeviceIndex]);
         pa_operation_unref(pa_context_set_sink_volume_by_name(m_Context, index.c_str(), &cVolume, ContextSuccessCallback, nullptr));
     }
 
@@ -319,9 +320,10 @@ namespace LibPAmanager
         {
             float averageVolume = static_cast<float>(pa_cvolume_avg(&(info->volume)));
             float volume = round(100 * averageVolume / static_cast<float>(PA_VOLUME_NORM));
-            m_DefaultOutputDeviceVolume = static_cast<uint>(volume);
+            m_DefaultDevices.m_OutputDeviceVolume = static_cast<uint>(volume);
 
-            auto message = std::string("GetSinkVolumeCallback, m_DefaultOutputDeviceVolume = ") + std::to_string(m_DefaultOutputDeviceVolume);
+            auto message = std::string("GetSinkVolumeCallback, m_OutputDeviceVolume = ");
+            message += std::to_string(m_DefaultDevices.m_OutputDeviceVolume);
             LOG_CRITICAL(message);
         }
     }
@@ -458,42 +460,46 @@ namespace LibPAmanager
 
     std::string& SoundDeviceManager::GetDefaultOutputDevice() const
     {
-        uint   currentOutputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
+        uint   currentOutputDevice = m_DefaultDevices.m_OutputDeviceIndex;
         return m_OutputDeviceDescriptions[currentOutputDevice];
     }
-
-    uint SoundDeviceManager::GetVolume() const
+    
+    void SoundDeviceManager::SetDefaultVolume()
     {
-        auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
+        auto index = std::to_string(m_OutputDeviceIndicies[m_DefaultDevices.m_OutputDeviceIndex]);
 
         pa_operation* operation;
         operation = pa_context_get_sink_info_by_name(m_Context, index.c_str(), GetSinkVolumeCallback, nullptr);
         pa_operation_unref(operation);
 
-        uint volume = 0;
-        return volume;
+    }
+
+    uint SoundDeviceManager::GetVolume() const
+    {
+        return m_DefaultDevices.m_OutputDeviceVolume;
     }
 
     void SoundDeviceManager::SetVolume(uint volume)
     {
-        m_DefaultOutputDeviceVolume = volume;
-
-        if (m_DefaultOutputDeviceVolume > 100)
+        if (volume > 100)
         {
-            m_DefaultOutputDeviceVolume = 100;
+            m_DefaultDevices.m_OutputDeviceVolumeRequest = 100;
             PRINT_ERROR("SetVolume: Clamping output volume to 100. Permissible input range: 0 - 100");
         }
-        auto index = std::to_string(m_OutputDeviceIndicies[m_ServerInfo.m_DefaultOutputDeviceIndex]);
+        else
+        {
+            m_DefaultDevices.m_OutputDeviceVolumeRequest = volume;
+        }
+        auto index = std::to_string(m_OutputDeviceIndicies[m_DefaultDevices.m_OutputDeviceIndex]);
 
         pa_operation* operation;
         operation = pa_context_get_sink_info_by_name(m_Context, index.c_str(), SetSinkVolumeCallback, nullptr);
         pa_operation_unref(operation);
-
     }
 
     void SoundDeviceManager::CycleNextOutputDevice()
     {
-        auto outputDevice = m_ServerInfo.m_DefaultOutputDeviceIndex;
+        auto outputDevice = m_DefaultDevices.m_OutputDeviceIndex;
         outputDevice++;
         if (outputDevice == m_OutputDeviceNames.size())
         {

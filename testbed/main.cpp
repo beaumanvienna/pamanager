@@ -42,31 +42,31 @@ int main()
 
     std::thread onEnter(OnEnter, soundDeviceManager);
 
-    PRINT_MESSAGE(Color::FG_GREEN, "*** pulseaudio device manager test ***");
+    PrintMessage(Color::FG_GREEN, "*** pulseaudio device manager test ***");
 
     LibPAmanager::PrintInfo();
     LibPAmanager::PrintVersion();
 
-    PRINT_MESSAGE(Color::FG_YELLOW, "press enter to cycle through sound output devices");
+    PrintMessage(Color::FG_YELLOW, "press enter to cycle through sound output devices");
 
     uint volume = 0;
+    std::this_thread::sleep_for(300ms);
 
     while(true)
     {
         LOG_MESSAGE("main thread\n");
 
+        // get volume
+        volume = soundDeviceManager->GetVolume();
+
         // set volume
-        std::this_thread::sleep_for(400ms);
-        volume += 10;
-        if (volume > 110)
+        volume += 1;
+        if (volume >= 100)
         {
             volume = 0;
         }
         soundDeviceManager->SetVolume(volume);
-
-        // get volume
-        std::this_thread::sleep_for(400ms);
-        soundDeviceManager->GetVolume();
+        std::this_thread::sleep_for(800ms);       
     }
 }
 
