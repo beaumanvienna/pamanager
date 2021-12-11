@@ -94,7 +94,7 @@ namespace LibPAmanager
         void* state = nullptr;
 
         LOG_MESSAGE("  Properties are: \n");
-        while (1)
+        while (true)
         {
             const char* key;
             if ((key = pa_proplist_iterate(props, &state)) == nullptr)
@@ -111,7 +111,7 @@ namespace LibPAmanager
     void SoundDeviceManager::SinklistCallback(pa_context* context, const pa_sink_info* info, int eol, void* userdata)
     {
         LOG_CRITICAL("SinklistCallback");
-        // If eol is set to a positive number, you're at the end of the list
+        // If eol is set to a positive number, the end of the list is reached
         if ((eol > 0) || (!info))
         {
             LOG_MESSAGE("**No more sinks\n");
@@ -240,8 +240,8 @@ namespace LibPAmanager
                 // set up a callback to tell us about sink devices
                 if (!(operation = pa_context_get_sink_info_list(context,
                                     SinklistCallback,
-                                    nullptr
-                                    ))) {
+                                    nullptr)))
+                {
                     PRINT_ERROR("ContextStateCallback: pa_context_subscribe() failed");
                     return;
                 }
@@ -566,10 +566,10 @@ namespace LibPAmanager
         m_MainloopAPI = pa_mainloop_get_api(m_Mainloop);
         m_Context = pa_context_new(m_MainloopAPI, "Device list");
 
-        // This function connects to the pulse server
+        // This function connects to the pulse audio server
         pa_context_connect(m_Context, nullptr, (pa_context_flags_t)0, nullptr);
 
-        // This function defines a callback so the server will tell us its state.
+        // This function defines a callback so the server will tell us its state
         pa_context_set_state_callback(m_Context, ContextStateCallback, nullptr);
 
         while(true)
