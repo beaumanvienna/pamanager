@@ -23,10 +23,12 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 #include <pulse/pulseaudio.h>
 
 namespace LibPAmanager
 {
+    class Event;
     class SoundDeviceManager
     {
     public:
@@ -37,10 +39,12 @@ namespace LibPAmanager
         void CycleNextOutputDevice();
         void PrintInputDeviceList() const;
         void PrintOutputDeviceList() const;
+        bool IsReady() const { return m_Ready; }
         std::string& GetDefaultOutputDevice() const;
-        void SetOutputDevice(const std::string& description);
         std::vector<std::string>& GetInputDeviceList();
         std::vector<std::string>& GetOutputDeviceList();
+        void SetOutputDevice(const std::string& description);
+        void SetCallback(std::function<void(const Event&)> callback);
 
     private:
         SoundDeviceManager();
@@ -67,6 +71,7 @@ namespace LibPAmanager
         static void ContextStateCallback(pa_context* context, void* userdata);
 
     private:
+        static bool m_Ready;
         static SoundDeviceManager* m_Instance;
         static pa_context* m_Context;
 
@@ -77,11 +82,15 @@ namespace LibPAmanager
         static std::vector<std::string> m_InputDeviceDescriptions;
         static std::vector<uint> m_InputDeviceIndicies;
         static std::vector<std::string> m_InputDeviceNames;
+        static uint m_InputDevices;
         // output devices
         static std::vector<std::string> m_OutputDeviceDescriptions;
         static std::vector<uint> m_OutputDeviceIndicies;
         static std::vector<std::string> m_OutputDeviceNames;
+        static uint m_OutputDevices;
 
+        // callback to alert end user application about events
+        static std::function<void(const Event&)> m_ApplicationEventCallback;
 
     private:
         struct DefaultDevices
@@ -92,6 +101,29 @@ namespace LibPAmanager
             uint m_OutputDeviceVolumeRequest;
         };
         static DefaultDevices m_DefaultDevices;
+
+    };
+
+    class Event
+    {
+    public:
+        enum EventType
+        {
+            DEVICE_MANAGER_READY,
+            OUTPUT_DEVICE_VOLUME_CHANGED,
+            OUTPUT_DEVICE_LIST_CHANGED,
+            INPUT_DEVICE_LIST_CHANGED
+        };
+
+    public:
+        Event(EventType eventType) : m_EventType(eventType) {}
+        virtual ~Event() {}
+
+        auto GetType() const { return m_EventType; }
+        std::string PrintType() const;
+
+    private:
+        EventType m_EventType;
 
     };
 }

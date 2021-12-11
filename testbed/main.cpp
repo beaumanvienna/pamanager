@@ -31,17 +31,19 @@ using namespace std::chrono_literals;
 using namespace LibPAmanager;
 
 void OnEnter(SoundDeviceManager* soundDeviceManager);
+void InitSound(SoundDeviceManager* soundDeviceManager);
+
+namespace Main
+{
+    bool g_DeviceManagerReady = false;
+}
 
 //
 // test application with a main thread
 //
 int main()
 {
-    auto soundDeviceManager = SoundDeviceManager::GetInstance();
-    soundDeviceManager->Start();
-
-    std::thread onEnter(OnEnter, soundDeviceManager);
-
+    // start test suite
     PrintMessage(Color::FG_GREEN, "*** pulseaudio device manager test ***");
 
     LibPAmanager::PrintInfo();
@@ -49,9 +51,30 @@ int main()
 
     PrintMessage(Color::FG_YELLOW, "press enter to cycle through sound output devices");
 
-    uint volume = 0;
-    std::this_thread::sleep_for(300ms);
+    // start profiling
+    auto startTime = std::chrono::high_resolution_clock::now();
 
+    // create and initialize sound device manager
+    auto soundDeviceManager = SoundDeviceManager::GetInstance();
+    InitSound(soundDeviceManager);
+
+    // test suite: add keyboard input
+    std::thread onEnter(OnEnter, soundDeviceManager);
+
+    // wait until device manager is online
+    do
+    {
+        std::this_thread::sleep_for(1ms);
+    } while (!Main::g_DeviceManagerReady);
+
+    // profiling: calculate elapsed time since start
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::time_point_cast<std::chrono::milliseconds>(startTime).time_since_epoch();
+    auto end   = std::chrono::time_point_cast<std::chrono::milliseconds>(endTime).time_since_epoch();
+    auto elapsedTime = end - start;
+    PrintMessage(Color::FG_BLUE, std::string("elapsed time in milliseconds: ") + std::to_string(elapsedTime.count()));
+
+    uint volume = 0;
     while(true)
     {
         LOG_MESSAGE("main thread\n");
@@ -66,8 +89,39 @@ int main()
             volume = 0;
         }
         soundDeviceManager->SetVolume(volume);
-        std::this_thread::sleep_for(800ms);       
+        std::this_thread::sleep_for(800ms);   
     }
+}
+
+//
+// start device manager and set up callback function
+//
+void InitSound(SoundDeviceManager* soundDeviceManager)
+{
+    soundDeviceManager->Start();
+    
+    // the callback is called from the sound device manager's thread
+    soundDeviceManager->SetCallback([](const LibPAmanager::Event& event)
+    {
+        // react upon event
+        PrintMessage(Color::FG_RED, event.PrintType());
+        auto eventType = event.GetType();
+        switch (eventType)
+        {
+            case LibPAmanager::Event::DEVICE_MANAGER_READY:
+                Main::g_DeviceManagerReady = true;
+                break;
+            case LibPAmanager::Event::OUTPUT_DEVICE_LIST_CHANGED:
+                // do something
+                break;
+            case LibPAmanager::Event::OUTPUT_DEVICE_VOLUME_CHANGED:
+                // do something
+                break;
+            case LibPAmanager::Event::INPUT_DEVICE_LIST_CHANGED:
+                // do something
+                break;
+        }
+    });
 }
 
 //

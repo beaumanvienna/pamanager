@@ -31,20 +31,23 @@ using namespace std::chrono_literals;
 
 namespace LibPAmanager
 {
-
+    bool SoundDeviceManager::m_Ready = false;
     SoundDeviceManager* SoundDeviceManager::m_Instance = nullptr;
     pa_context* SoundDeviceManager::m_Context = nullptr;
     pa_mainloop*     SoundDeviceManager::m_Mainloop = nullptr;
     pa_mainloop_api* SoundDeviceManager::m_MainloopAPI = nullptr;
     SoundDeviceManager::DefaultDevices SoundDeviceManager::m_DefaultDevices = {0, 0, 0, 0};
+    std::function<void(const Event&)> SoundDeviceManager::m_ApplicationEventCallback;
 
     std::vector<std::string> SoundDeviceManager::m_InputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_InputDeviceIndicies;
     std::vector<std::string> SoundDeviceManager::m_InputDeviceNames;
+    uint SoundDeviceManager::m_InputDevices = 0;
 
     std::vector<std::string> SoundDeviceManager::m_OutputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_OutputDeviceIndicies;
     std::vector<std::string> SoundDeviceManager::m_OutputDeviceNames;
+    uint SoundDeviceManager::m_OutputDevices = 0;
 
     SoundDeviceManager::SoundDeviceManager() {}
 
@@ -114,6 +117,15 @@ namespace LibPAmanager
             LOG_MESSAGE("**No more sinks\n");
             SetDefaultDevices();
             SetDefaultVolume();
+
+            // notify end user app about change
+            if (m_OutputDevices != m_OutputDeviceIndicies.size())
+            {
+                m_OutputDevices = m_OutputDeviceIndicies.size();
+
+                Event event(Event::OUTPUT_DEVICE_LIST_CHANGED);
+                m_ApplicationEventCallback(event);
+            }
             return;
         }
         AddOutputDevice(info->index, info->description, info->name);
@@ -131,6 +143,15 @@ namespace LibPAmanager
         {
             LOG_MESSAGE("**No more sources\n");
             SetDefaultDevices();
+
+            // notify end user app about change
+            if (m_InputDevices != m_InputDeviceIndicies.size())
+            {
+                m_InputDevices = m_InputDeviceIndicies.size();
+
+                Event event(Event::INPUT_DEVICE_LIST_CHANGED);
+                m_ApplicationEventCallback(event);
+            }
             return;
         }
         AddInputDevice(info->index, info->description, info->name);
@@ -320,11 +341,25 @@ namespace LibPAmanager
         {
             float averageVolume = static_cast<float>(pa_cvolume_avg(&(info->volume)));
             float volume = round(100 * averageVolume / static_cast<float>(PA_VOLUME_NORM));
+            auto previousVolume = m_DefaultDevices.m_OutputDeviceVolume;
             m_DefaultDevices.m_OutputDeviceVolume = static_cast<uint>(volume);
 
             auto message = std::string("GetSinkVolumeCallback, m_OutputDeviceVolume = ");
             message += std::to_string(m_DefaultDevices.m_OutputDeviceVolume);
             LOG_CRITICAL(message);
+
+            // notify end user app about change
+            if (!m_Ready)
+            {
+                m_Ready = true;
+
+                Event event(Event::DEVICE_MANAGER_READY);
+                m_ApplicationEventCallback(event);
+            } else if (previousVolume != m_DefaultDevices.m_OutputDeviceVolume)
+            {
+                Event event(Event::OUTPUT_DEVICE_VOLUME_CHANGED);
+                m_ApplicationEventCallback(event);
+            }
         }
     }
 
@@ -463,7 +498,7 @@ namespace LibPAmanager
         uint   currentOutputDevice = m_DefaultDevices.m_OutputDeviceIndex;
         return m_OutputDeviceDescriptions[currentOutputDevice];
     }
-    
+
     void SoundDeviceManager::SetDefaultVolume()
     {
         auto index = std::to_string(m_OutputDeviceIndicies[m_DefaultDevices.m_OutputDeviceIndex]);
@@ -508,6 +543,11 @@ namespace LibPAmanager
         SetOutputDevice(outputDevice);
     }
 
+    void SoundDeviceManager::SetCallback(std::function<void(const Event& eventType)> callback)
+    {
+        m_ApplicationEventCallback = callback;
+    }
+
     void SoundDeviceManager::PulseAudioThread()
     {
         // Create a mainloop API and connection to the default server
@@ -524,6 +564,23 @@ namespace LibPAmanager
         while(true)
         {
             Mainloop();
+        }
+    }
+
+    std::string Event::PrintType() const
+    {
+        switch(m_EventType)
+        {
+            case DEVICE_MANAGER_READY:
+                return "DEVICE_MANAGER_READY";
+            case OUTPUT_DEVICE_VOLUME_CHANGED:
+                return "OUTPUT_DEVICE_VOLUME_CHANGED";
+            case OUTPUT_DEVICE_LIST_CHANGED:
+                return "OUTPUT_DEVICE_LIST_CHANGED";
+            case INPUT_DEVICE_LIST_CHANGED:
+                return "INPUT_DEVICE_LIST_CHANGED";
+            default:
+                return "invalid event";
         }
     }
 }
