@@ -33,7 +33,7 @@ using namespace LibPAmanager;
 void OnEnter(SoundDeviceManager* soundDeviceManager);
 void InitSound(SoundDeviceManager* soundDeviceManager);
 
-namespace Main
+namespace TestSuite
 {
     bool g_DeviceManagerReady = false;
 }
@@ -65,7 +65,7 @@ int main()
     do
     {
         std::this_thread::sleep_for(1ms);
-    } while (!Main::g_DeviceManagerReady);
+    } while (!TestSuite::g_DeviceManagerReady);
 
     // profiling: calculate elapsed time since start
     auto endTime = std::chrono::high_resolution_clock::now();
@@ -101,7 +101,7 @@ void InitSound(SoundDeviceManager* soundDeviceManager)
     soundDeviceManager->Start();
     
     // the callback is called from the sound device manager's thread
-    soundDeviceManager->SetCallback([](const LibPAmanager::Event& event)
+    soundDeviceManager->SetCallback([=](const LibPAmanager::Event& event)
     {
         // react upon event
         PrintMessage(Color::FG_RED, event.PrintType());
@@ -109,17 +109,43 @@ void InitSound(SoundDeviceManager* soundDeviceManager)
         switch (eventType)
         {
             case LibPAmanager::Event::DEVICE_MANAGER_READY:
-                Main::g_DeviceManagerReady = true;
+            {
+                TestSuite::g_DeviceManagerReady = true;
                 break;
+            }
+            case LibPAmanager::Event::OUTPUT_DEVICE_CHANGED:
+            {
+                auto device = soundDeviceManager->GetDefaultOutputDevice();
+                PrintMessage(Color::FG_BLUE, std::string("output device changed to: ") + device);
+                break;
+            }
             case LibPAmanager::Event::OUTPUT_DEVICE_LIST_CHANGED:
-                // do something
+            {
+                auto outputDeviceList = soundDeviceManager->GetOutputDeviceList();
+                // user code goes here
+                for (auto device : outputDeviceList)
+                {
+                    PrintMessage(Color::FG_BLUE, std::string("list all output devices: ") + device);
+                }
                 break;
+            }
             case LibPAmanager::Event::OUTPUT_DEVICE_VOLUME_CHANGED:
-                // do something
+            {
+                auto volume = soundDeviceManager->GetVolume();
+                // user code goes here
+                PrintMessage(Color::FG_BLUE, std::string("output volume changed to: ") + std::to_string(volume));
                 break;
+            }
             case LibPAmanager::Event::INPUT_DEVICE_LIST_CHANGED:
-                // do something
+            {
+                auto inputDeviceList  = soundDeviceManager->GetInputDeviceList();
+                // user code goes here
+                for (auto device : inputDeviceList)
+                {
+                    PrintMessage(Color::FG_BLUE, std::string("list all input devices: ") + device);
+                }
                 break;
+            }
         }
     });
 }

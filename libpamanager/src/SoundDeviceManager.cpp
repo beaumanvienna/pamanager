@@ -37,7 +37,7 @@ namespace LibPAmanager
     pa_mainloop*     SoundDeviceManager::m_Mainloop = nullptr;
     pa_mainloop_api* SoundDeviceManager::m_MainloopAPI = nullptr;
     SoundDeviceManager::DefaultDevices SoundDeviceManager::m_DefaultDevices = {0, 0, 0, 0};
-    std::function<void(const Event&)> SoundDeviceManager::m_ApplicationEventCallback;
+    std::function<void(const Event&)> SoundDeviceManager::m_ApplicationEventCallback = SoundDeviceManager::DummyAppEventCallback;
 
     std::vector<std::string> SoundDeviceManager::m_InputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_InputDeviceIndicies;
@@ -296,7 +296,13 @@ namespace LibPAmanager
         {
             if (outputDevice == info->default_sink_name)
             {
-                m_DefaultDevices.m_OutputDeviceIndex = iterator;
+                if (m_DefaultDevices.m_OutputDeviceIndex != iterator)
+                {
+                    m_DefaultDevices.m_OutputDeviceIndex = iterator;
+                    
+                    Event event(Event::OUTPUT_DEVICE_CHANGED);
+                    m_ApplicationEventCallback(event);
+                }
                 break;
             }
             iterator++;
@@ -548,6 +554,11 @@ namespace LibPAmanager
         m_ApplicationEventCallback = callback;
     }
 
+    // use SetCallback to replace this function
+    void SoundDeviceManager::DummyAppEventCallback(const Event&)
+    {
+    }
+
     void SoundDeviceManager::PulseAudioThread()
     {
         // Create a mainloop API and connection to the default server
@@ -573,6 +584,8 @@ namespace LibPAmanager
         {
             case DEVICE_MANAGER_READY:
                 return "DEVICE_MANAGER_READY";
+            case OUTPUT_DEVICE_CHANGED:
+                return "OUTPUT_DEVICE_CHANGED";
             case OUTPUT_DEVICE_VOLUME_CHANGED:
                 return "OUTPUT_DEVICE_VOLUME_CHANGED";
             case OUTPUT_DEVICE_LIST_CHANGED:

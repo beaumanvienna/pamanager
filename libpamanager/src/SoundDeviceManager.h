@@ -55,6 +55,7 @@ namespace LibPAmanager
         static void SetDefaultDevices();
         static void RemoveInputDevice(uint index);
         static void RemoveOutputDevice(uint index);
+        static void DummyAppEventCallback(const Event&);
         static void SetOutputDevice(const uint outputDevice);
         static void PrintProperties(pa_proplist* props, bool verbose = false);
         static void AddInputDevice(uint index, const char* description, const char* name);
@@ -110,6 +111,7 @@ namespace LibPAmanager
         enum EventType
         {
             DEVICE_MANAGER_READY,
+            OUTPUT_DEVICE_CHANGED,
             OUTPUT_DEVICE_VOLUME_CHANGED,
             OUTPUT_DEVICE_LIST_CHANGED,
             INPUT_DEVICE_LIST_CHANGED
