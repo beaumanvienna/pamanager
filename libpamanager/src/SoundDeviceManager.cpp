@@ -47,7 +47,9 @@ namespace LibPAmanager
     std::vector<std::string> SoundDeviceManager::m_OutputDeviceDescriptions;
     std::vector<uint> SoundDeviceManager::m_OutputDeviceIndicies;
     std::vector<std::string> SoundDeviceManager::m_OutputDeviceNames;
+    std::vector<uint> SoundDeviceManager::m_OutputDeviceVolumes;
     uint SoundDeviceManager::m_OutputDevices = 0;
+    bool SoundDeviceManager::m_SetOutputDevice = false;
 
     SoundDeviceManager::SoundDeviceManager() {}
 
@@ -116,7 +118,6 @@ namespace LibPAmanager
         {
             LOG_MESSAGE("**No more sinks\n");
             SetDefaultDevices();
-            SetDefaultVolume();
 
             // notify end user app about change
             if (m_OutputDevices != m_OutputDeviceIndicies.size())
@@ -128,7 +129,7 @@ namespace LibPAmanager
             }
             return;
         }
-        AddOutputDevice(info->index, info->description, info->name);
+        AddOutputDevice(info->index, info->description, info->name, info->volume);
         LOG_MESSAGE("Sink: name %s, description -->%s<--, index: %d\n", info->name, info->description, info->index);
         PrintProperties(info->proplist);
     }
@@ -299,7 +300,7 @@ namespace LibPAmanager
                 if (m_DefaultDevices.m_OutputDeviceIndex != iterator)
                 {
                     m_DefaultDevices.m_OutputDeviceIndex = iterator;
-                    
+
                     Event event(Event::OUTPUT_DEVICE_CHANGED);
                     m_ApplicationEventCallback(event);
                 }
@@ -350,6 +351,9 @@ namespace LibPAmanager
             auto previousVolume = m_DefaultDevices.m_OutputDeviceVolume;
             m_DefaultDevices.m_OutputDeviceVolume = static_cast<uint>(volume);
 
+            auto currentOutputDevice = m_DefaultDevices.m_OutputDeviceIndex;
+            m_OutputDeviceVolumes[currentOutputDevice] = static_cast<uint>(volume);
+
             auto message = std::string("GetSinkVolumeCallback, m_OutputDeviceVolume = ");
             message += std::to_string(m_DefaultDevices.m_OutputDeviceVolume);
             LOG_CRITICAL(message);
@@ -361,7 +365,12 @@ namespace LibPAmanager
 
                 Event event(Event::DEVICE_MANAGER_READY);
                 m_ApplicationEventCallback(event);
-            } else if (previousVolume != m_DefaultDevices.m_OutputDeviceVolume)
+            }
+            else if (m_SetOutputDevice)
+            {
+                m_SetOutputDevice = false;
+            }
+            else if (previousVolume != m_DefaultDevices.m_OutputDeviceVolume)
             {
                 Event event(Event::OUTPUT_DEVICE_VOLUME_CHANGED);
                 m_ApplicationEventCallback(event);
@@ -400,7 +409,7 @@ namespace LibPAmanager
         }
     }
 
-    void SoundDeviceManager::AddOutputDevice(uint index, const char* description, const char* name)
+    void SoundDeviceManager::AddOutputDevice(uint index, const char* description, const char* name, const pa_cvolume& volume)
     {
         for (auto deviceIndex : m_OutputDeviceIndicies)
         {
@@ -413,6 +422,9 @@ namespace LibPAmanager
         m_OutputDeviceDescriptions.push_back(description);
         m_OutputDeviceIndicies.push_back(index);
         m_OutputDeviceNames.push_back(name);
+        float averageVolume = static_cast<float>(pa_cvolume_avg(&volume));
+        float outputDeviceVolume = round(100 * averageVolume / static_cast<float>(PA_VOLUME_NORM));
+        m_OutputDeviceVolumes.push_back(outputDeviceVolume);
     }
 
     void SoundDeviceManager::RemoveOutputDevice(uint index)
@@ -453,6 +465,10 @@ namespace LibPAmanager
                 operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
                 pa_operation_unref(operation);
 
+                m_DefaultDevices.m_OutputDeviceVolume = m_OutputDeviceVolumes[iterator];
+                m_DefaultDevices.m_OutputDeviceIndex = iterator;
+                m_SetOutputDevice = true;
+
                 std::string message = "SoundDeviceManager::SetOutputDevice: ";
                 message += description + ", index: " + index;
                 LOG_TRACE(message);
@@ -472,6 +488,10 @@ namespace LibPAmanager
             pa_operation* operation;
             operation = pa_context_set_default_sink(m_Context, index.c_str(), ContextSuccessCallback, nullptr);
             pa_operation_unref(operation);
+
+            m_DefaultDevices.m_OutputDeviceVolume = m_OutputDeviceVolumes[outputDevice];
+            m_DefaultDevices.m_OutputDeviceIndex = outputDevice;
+            m_SetOutputDevice = true;
 
             std::string description = m_OutputDeviceDescriptions[outputDevice]; 
             std::string message = "SoundDeviceManager::SetOutputDevice: ";
@@ -501,7 +521,7 @@ namespace LibPAmanager
 
     std::string& SoundDeviceManager::GetDefaultOutputDevice() const
     {
-        uint   currentOutputDevice = m_DefaultDevices.m_OutputDeviceIndex;
+        auto currentOutputDevice = m_DefaultDevices.m_OutputDeviceIndex;
         return m_OutputDeviceDescriptions[currentOutputDevice];
     }
 
@@ -517,7 +537,8 @@ namespace LibPAmanager
 
     uint SoundDeviceManager::GetVolume() const
     {
-        return m_DefaultDevices.m_OutputDeviceVolume;
+        auto currentOutputDevice = m_DefaultDevices.m_OutputDeviceIndex;
+        return m_OutputDeviceVolumes[currentOutputDevice];
     }
 
     void SoundDeviceManager::SetVolume(uint volume)

@@ -59,7 +59,7 @@ namespace LibPAmanager
         static void SetOutputDevice(const uint outputDevice);
         static void PrintProperties(pa_proplist* props, bool verbose = false);
         static void AddInputDevice(uint index, const char* description, const char* name);
-        static void AddOutputDevice(uint index, const char* description, const char* name);
+        static void AddOutputDevice(uint index, const char* description, const char* name, const pa_cvolume& volume);
 
         // callback functions
         static void ServerInfoCallback(pa_context* context, const pa_server_info* info, void* userdata);
@@ -88,7 +88,9 @@ namespace LibPAmanager
         static std::vector<std::string> m_OutputDeviceDescriptions;
         static std::vector<uint> m_OutputDeviceIndicies;
         static std::vector<std::string> m_OutputDeviceNames;
+        static std::vector<uint> m_OutputDeviceVolumes;
         static uint m_OutputDevices;
+        static bool m_SetOutputDevice;
 
         // callback to alert end user application about events
         static std::function<void(const Event&)> m_ApplicationEventCallback;
