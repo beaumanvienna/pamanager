@@ -4,3 +4,4 @@ obj/
 *.make
 lib/bin/
 lib/obj/
+*.vcxproj
