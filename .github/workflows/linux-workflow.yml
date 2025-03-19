@@ -28,7 +28,7 @@ jobs:
       run: export MAKEFLAGS=-j8 && make verbose=1 config=release
 
     - name: upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
             name: pa
             path: bin/Release
